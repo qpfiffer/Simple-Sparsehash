@@ -13,7 +13,7 @@ clean:
 	rm $(NAME)
 
 test: test.o $(NAME)
-	$(CC) $(CFLAGS) $(INCLUDES) $(LIBINCLUDES) -o $(TESTNAME) $< $(NAME)
+	$(CC) $(CFLAGS) $(INCLUDES) $(LIBINCLUDES) -o $(TESTNAME) $< -lsimple-sparsehash
 
 %.o: ./src/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<

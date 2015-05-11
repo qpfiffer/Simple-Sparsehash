@@ -6,7 +6,7 @@
 #define begin_tests() int test_return_val = 0;\
 					  int tests_failed = 0;\
 					  int tests_run = 0;
-#define run_test(test) printf("----- %s -----\n", #test);\
+#define run_test(test) printf("%s: ", #test);\
 	test_return_val = test();\
 	if (!test_return_val) {\
 		tests_failed++;\
@@ -17,14 +17,34 @@
 	}
 #define finish_tests() printf("\n-----\nTests passed: (%i/%i)\n", tests_run,\
 							  tests_run + tests_failed);
+#define assert(x) if (!x) {\
+		printf("failed on line %i ", __LINE__);\
+		return 0;\
+	}
 
-int test_insert() {
-	return 0;
+
+int test_set() {
+	struct sparse_dict *dict = NULL;
+	dict = sparse_dict_init();
+	assert(dict);
+
+	assert(sparse_dict_free(dict));
+	return 1;
+}
+
+int test_get() {
+	struct sparse_dict *dict = NULL;
+	dict = sparse_dict_init();
+	assert(dict);
+
+	assert(sparse_dict_free(dict));
+	return 1;
 }
 
 int main(int argc, char *argv[]) {
 	begin_tests();
-	run_test(test_insert);
+	run_test(test_set);
+	run_test(test_get);
 	finish_tests();
 
 	return 0;
