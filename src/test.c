@@ -1,6 +1,7 @@
 /* vim: noet ts=4 sw=4
 */
 #include <stdio.h>
+#include <string.h>
 #include "simple_sparsehash.h"
 
 #define begin_tests() int test_return_val = 0;\
@@ -28,14 +29,23 @@ int test_set() {
 	dict = sparse_dict_init();
 	assert(dict);
 
+	assert(sparse_dict_set(dict, "key", strlen("key"), "value", strlen("value")));
+
 	assert(sparse_dict_free(dict));
 	return 1;
 }
 
 int test_get() {
 	struct sparse_dict *dict = NULL;
+	const char *value = NULL;
+
 	dict = sparse_dict_init();
 	assert(dict);
+
+	assert(sparse_dict_set(dict, "key", strlen("key"), "value", strlen("value")));
+
+	value = sparse_dict_get(dict, "key", strlen("key"));
+	assert(strncmp(value, "value", strlen("value")) == 0);
 
 	assert(sparse_dict_free(dict));
 	return 1;
