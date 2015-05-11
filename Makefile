@@ -16,7 +16,7 @@ test: test.o $(NAME)
 	$(CC) $(CFLAGS) $(INCLUDES) $(LIBINCLUDES) -o $(TESTNAME) $< -lsimple-sparsehash
 
 %.o: ./src/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $<
+	$(CC) $(CFLAGS) $(INCLUDES) -fPIC -c $<
 
 $(NAME): $(OBJS)
 	$(CC) -shared -fPIC $(CFLAGS) $(INCLUDES) -o $(NAME) $^

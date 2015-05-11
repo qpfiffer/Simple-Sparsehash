@@ -6,14 +6,22 @@
 
 static const uint16_t GROUP_SIZE = 48;
 
+/* These are the objects that get stored in the sparse hash. */
+struct sparse_bucket {
+	const char		*key;
+	const size_t	klen;
+	const void		*val;
+	const size_t	vlen;
+};
+
 /* A sparse array is how we store buckets in the sparse_dict. A sparse array
  * is an array that only uses the amount of memory that the objects stored in
  * it requires. That is to say, we aren't wasting space holding "empty" slots
  * in the array.
  */
 struct sparse_array {
-	uint32_t		count; /* The number of items currently in this vector. */
-	uint32_t		size;  /* The current maximum size of this vector. */
+	uint32_t		count;     /* The number of items currently in this vector. */
+	uint32_t		max_count; /* The current maximum size of this vector. */
 };
 
 struct sparse_dict {
