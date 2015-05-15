@@ -1,6 +1,7 @@
 /* vim: noet ts=4 sw=4
 */
 #include <stdlib.h>
+#include <string.h>
 #include "simple_sparsehash.h"
 
 /* TODO: Figure out better names for charbit/modbit */
@@ -43,6 +44,10 @@ struct sparse_array *sparse_array_init(const size_t element_size) {
 
 const int sparse_array_set(struct sparse_array *arr, const size_t i,
 						   const void *val, const size_t vlen) {
+	size_t offset = 0;
+	void *destination = NULL;
+	if (vlen > arr->elem_size)
+		return 0;
 	/* So what needs to happen in this function:
 	 * 1. Convert the position (i) to the 'offset'
 	 * 2. Check to see if this slot is already occupied (bmtest).
@@ -53,12 +58,19 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	 * 4. After doing all that, create a copy of val and stick it in the right
 	 *    position in our array.
 	 */
-	const size_t offset = position_to_offset(arr->bitmap, i);
+
+	offset = position_to_offset(arr->bitmap, i);
+	/* RESIZE HERE */
 	if (is_position_occupied(arr->bitmap, offset)) {
 		return 0;
 	} else {
 		return 0;
 	}
+
+
+	/* Copy the size into the position */
+	destination = (char *)(arr->group) + (offset * (arr->elem_size + sizeof(size_t)));
+	memcpy(destination, &vlen, sizeof(vlen));
 
 	return 1;
 }
@@ -69,8 +81,9 @@ const void *sparse_array_get(struct sparse_array *arr,
 }
 
 const int sparse_array_free(struct sparse_array *arr) {
+	free(arr->group);
 	free(arr);
-	return 0;
+	return 1;
 }
 
 /* Sparse Dictionary */
