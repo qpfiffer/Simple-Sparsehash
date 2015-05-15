@@ -5,14 +5,14 @@ OBJS=simple_sparsehash.o
 INCLUDES=-I./include/
 LIBINCLUDES=-L.
 
-all: $(NAME) test
+all: $(NAME) $(TESTNAME)
 
 clean:
 	rm *.o
 	rm $(TESTNAME)
 	rm $(NAME)
 
-test: test.o $(NAME)
+$(TESTNAME): test.o $(NAME)
 	$(CC) $(CFLAGS) $(INCLUDES) $(LIBINCLUDES) -o $(TESTNAME) $< -lsimple-sparsehash
 
 %.o: ./src/%.c

@@ -23,7 +23,7 @@ struct sparse_bucket {
  * in the array.
  */
 struct sparse_array {
-	uint32_t		count;							/* The number of items currently in this vector. */
+	size_t		count;							/* The number of items currently in this vector. */
 	void *			group;							/* The place where we actually store things. */
 	unsigned char	bitmap[BITMAP_SIZE];	/* This is how we store the state of what is occupied in group. */
 	/* bitmap requires some explanation. We use the bitmap to store which
@@ -45,8 +45,9 @@ struct sparse_dict {
 /* ------------ */
 
 struct sparse_array *sparse_array_init(const size_t element_size);
-const int sparse_array_set(struct sparse_array *arr, const uint32_t i,
+const int sparse_array_set(struct sparse_array *arr, const size_t i,
 						   const void *val, const size_t vlen);
+const void *sparse_array_get(struct sparse_array *arr, const size_t i);
 const int sparse_array_free(struct sparse_array *arr);
 
 

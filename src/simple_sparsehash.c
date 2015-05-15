@@ -8,7 +8,8 @@ struct sparse_array *sparse_array_init(const size_t element_size) {
 	return NULL;
 }
 
-const int sparse_array_set(struct sparse_array *arr, const uint32_t i, const void *val, const size_t vlen) {
+const int sparse_array_set(struct sparse_array *arr, const size_t i,
+						   const void *val, const size_t vlen) {
 	/* So what needs to happen in this function:
 	 * 1. Convert the position (i) to the 'offset'
 	 * 2. Check to see if this slot is already occupied (bmtest).
