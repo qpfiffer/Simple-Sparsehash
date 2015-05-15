@@ -25,6 +25,14 @@
 
 
 int test_array_set() {
+	struct sparse_array *arr = NULL;
+	const int test_num = 666;
+	arr = sparse_array_init(sizeof(int));
+	assert(arr);
+
+	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
+
+	assert(sparse_array_free(arr));
 	return 0;
 }
 

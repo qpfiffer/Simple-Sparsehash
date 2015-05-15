@@ -3,6 +3,14 @@
 #include <stdlib.h>
 #include "simple_sparsehash.h"
 
+static const size_t position_to_offset(size_t position) {
+	return 0;
+}
+
+static const int is_occupied(const size_t offset) {
+	return 0;
+}
+
 /* Sparse Array */
 struct sparse_array *sparse_array_init(const size_t element_size) {
 	return NULL;
@@ -20,7 +28,19 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	 * 4. After doing all that, create a copy of val and stick it in the right
 	 *    position in our array.
 	 */
-	return 0;
+	const size_t offset = position_to_offset(i);
+	if (is_occupied(offset)) {
+		return 0;
+	} else {
+		return 0;
+	}
+
+	return 1;
+}
+
+const void *sparse_array_get(struct sparse_array *arr,
+							 const size_t i, size_t outsize) {
+	return NULL;
 }
 
 const int sparse_array_free(struct sparse_array *arr) {
