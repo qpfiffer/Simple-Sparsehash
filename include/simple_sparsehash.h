@@ -24,6 +24,7 @@ struct sparse_bucket {
  */
 struct sparse_array {
 	size_t			count;							/* The number of items currently in this vector. */
+	size_t			elem_size;						/* The maximum size of each element. */
 	void *			group;							/* The place where we actually store things. */
 	unsigned char	bitmap[BITMAP_SIZE];	/* This is how we store the state of what is occupied in group. */
 	/* bitmap requires some explanation. We use the bitmap to store which
