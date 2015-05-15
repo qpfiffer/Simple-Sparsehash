@@ -24,7 +24,15 @@
 	}
 
 
-int test_set() {
+int test_array_set() {
+	return 0;
+}
+
+int test_array_get() {
+	return 0;
+}
+
+int test_dict_set() {
 	struct sparse_dict *dict = NULL;
 	dict = sparse_dict_init();
 	assert(dict);
@@ -35,7 +43,7 @@ int test_set() {
 	return 1;
 }
 
-int test_get() {
+int test_dict_get() {
 	struct sparse_dict *dict = NULL;
 	const char *value = NULL;
 
@@ -53,8 +61,10 @@ int test_get() {
 
 int main(int argc, char *argv[]) {
 	begin_tests();
-	run_test(test_set);
-	run_test(test_get);
+	run_test(test_array_set);
+	run_test(test_array_get);
+	run_test(test_dict_set);
+	run_test(test_dict_get);
 	finish_tests();
 
 	return 0;

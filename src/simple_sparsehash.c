@@ -3,6 +3,31 @@
 #include <stdlib.h>
 #include "simple_sparsehash.h"
 
+/* Sparse Array */
+struct sparse_array *sparse_array_init(const size_t element_size) {
+	return NULL;
+}
+
+const int sparse_array_set(struct sparse_array *arr, const uint32_t i, const void *val, const size_t vlen) {
+	/* So what needs to happen in this function:
+	 * 1. Convert the position (i) to the 'offset'
+	 * 2. Check to see if this slot is already occupied (bmtest).
+	 *    overwrite the old element if this is the case.
+	 * 3. Otherwise, expand the array by a single element and increase
+	 *    our bucket count (arr->count). Finally, OR the bit in our state
+	 *    bitmap that shows this position is occupied.
+	 * 4. After doing all that, create a copy of val and stick it in the right
+	 *    position in our array.
+	 */
+	return 0;
+}
+
+const int sparse_array_free(struct sparse_array *arr) {
+	free(arr);
+	return 0;
+}
+
+/* Sparse Dictionary */
 struct sparse_dict *sparse_dict_init() {
 	struct sparse_dict *new = NULL;
 	new = calloc(1, sizeof(struct sparse_dict));

@@ -4,9 +4,12 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-static const uint16_t GROUP_SIZE = 48;
+#define GROUP_SIZE 48
+#define BITMAP_SIZE (GROUP_SIZE-1)/8 + 1
 
-/* These are the objects that get stored in the sparse hash. */
+/* These are the objects that get stored in the sparse arrays that
+ * make up a sparse dictionary.
+ */
 struct sparse_bucket {
 	const char		*key;
 	const size_t	klen;
@@ -20,14 +23,36 @@ struct sparse_bucket {
  * in the array.
  */
 struct sparse_array {
-	uint32_t		count;     /* The number of items currently in this vector. */
-	uint32_t		max_count; /* The current maximum size of this vector. */
+	uint32_t		count;							/* The number of items currently in this vector. */
+	void *			group;							/* The place where we actually store things. */
+	unsigned char	bitmap[BITMAP_SIZE];	/* This is how we store the state of what is occupied in group. */
+	/* bitmap requires some explanation. We use the bitmap to store which
+	 * `offsets` in the array are occupied. We do this through a series
+	 * of bit-testing functions.
+	 *
+	 * The math here (see '#define BITMAP_SIZE`) is, I believe, so that we
+	 * store exactly enough bits for our group size. The math returns the
+	 * minimum number of bytes to hold all the bits we need.
+	 */
 };
 
 struct sparse_dict {
-	unsigned int			num_buckets; /* The number of buckets currently in our table. */
 	struct sparse_array		**groups;    /* The number of groups we have. This is (num_buckets/GROUP_SIZE). */
 };
+
+/* ------------ */
+/* Sparse Array */
+/* ------------ */
+
+struct sparse_array *sparse_array_init(const size_t element_size);
+const int sparse_array_set(struct sparse_array *arr, const uint32_t i,
+						   const void *val, const size_t vlen);
+const int sparse_array_free(struct sparse_array *arr);
+
+
+/* ----------------- */
+/* Sparse Dictionary */
+/* ----------------- */
 
 /* Creates a new sparse dictionary. */
 struct sparse_dict *sparse_dict_init();
