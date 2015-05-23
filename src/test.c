@@ -38,12 +38,17 @@ int test_cannot_set_bigger_elements() {
 }
 
 int test_array_set() {
+	int i;
 	struct sparse_array *arr = NULL;
-	const int test_num = 666;
 	arr = sparse_array_init(sizeof(int));
 	assert(arr);
 
-	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
+	for (i = 0; i < GROUP_SIZE; i++) {
+		size_t siz = 0;
+		assert(sparse_array_set(arr, i, &i, sizeof(i)));
+		assert(sparse_array_get(arr, i, &siz) == i);
+		assert(siz == sizeof(int));
+	}
 
 	assert(sparse_array_free(arr));
 	return 1;
@@ -68,11 +73,13 @@ int test_array_set_overwrites_old_values() {
 int test_array_get() {
 	struct sparse_array *arr = NULL;
 	const int test_num = 666;
+	size_t item_size = 0;
 	arr = sparse_array_init(sizeof(int));
 	assert(arr);
 
 	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
-	assert(sparse_array_get(arr, 0, NULL) == 666);
+	assert(sparse_array_get(arr, 0, &item_size) == 666);
+	assert(item_size == sizeof(int));
 
 	assert(sparse_array_free(arr));
 	return 1;
@@ -110,6 +117,7 @@ int main(int argc, char *argv[]) {
 	run_test(test_cannot_set_bigger_elements);
 	run_test(test_array_set);
 	run_test(test_array_get);
+	run_test(test_array_set_overwrites_old_values);
 	run_test(test_dict_set);
 	run_test(test_dict_get);
 	finish_tests();

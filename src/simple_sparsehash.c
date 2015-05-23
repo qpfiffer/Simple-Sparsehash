@@ -128,7 +128,14 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 
 const void *sparse_array_get(struct sparse_array *arr,
 							 const size_t i, size_t *outsize) {
-	return NULL;
+	const size_t offset = position_to_offset(arr->bitmap, i);
+	const unsigned char *item_siz = (unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE);
+	const void *item = item_siz + sizeof(size_t);
+
+	if (outsize)
+		memcpy(outsize, item, sizeof(size_t));
+
+	return item;
 }
 
 const int sparse_array_free(struct sparse_array *arr) {
