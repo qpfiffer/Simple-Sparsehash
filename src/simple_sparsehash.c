@@ -20,10 +20,29 @@ static const size_t modbit(const size_t position) {
 /* This function is used to map an item's 'position' (the user-facing index
  * into the array) with the 'offset' which is the actual position in the
  * array, memory-wise.
+ *
+ * The way we do this is by counting the number of 1s in the bitmap from
+ * 0 .. i-1 in the bitmap. The original implementation uses a big table for the
+ * popcount, I've opted to just use a GCC builtin.
  */
 static const size_t position_to_offset(const unsigned char *bitmap,
-									   size_t position) {
-	return 0;
+									   const size_t position) {
+	size_t retval = 0;
+	size_t pos = position;
+	size_t bitmap_iter = 0;
+
+	/* Here we loop through the bitmap a char at a time (a char is 8 bits)
+	 * and count the number of 1s in that chunk.
+	 */
+	for (; pos > 8; pos -= 8)
+		retval += __builtin_popcount(bitmap[bitmap_iter++]);
+
+	/* This last bit does the same thing as above, but takes care of the
+	 * remainder that didn't fit cleanly into the 8 x 8 x 8 ... loop above. That
+	 * is to say, it grabs the last 0 - 7 bits and adds the number of 1s in it to
+	 * retval.
+	 */
+	return retval + __builtin_popcount(bitmap[bitmap_iter] & ((1 << pos) - 1));
 }
 
 static const int is_position_occupied(const unsigned char *bitmap,
@@ -64,6 +83,8 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	if (is_position_occupied(arr->bitmap, offset)) {
 		return 0;
 	} else {
+		/* Increase the bucket count because we've expanded */
+		arr->count++;
 		return 0;
 	}
 

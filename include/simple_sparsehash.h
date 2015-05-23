@@ -5,6 +5,10 @@
 #include <stdio.h>
 
 #define GROUP_SIZE 48
+/* The math here is, I believe, so that we
+ * store exactly enough bits for our group size. The math returns the
+ * minimum number of bytes to hold all the bits we need.
+ */
 #define BITMAP_SIZE (GROUP_SIZE-1)/8 + 1
 
 /* These are the objects that get stored in the sparse arrays that
@@ -26,14 +30,10 @@ struct sparse_array {
 	size_t			count;							/* The number of items currently in this vector. */
 	size_t			elem_size;						/* The maximum size of each element. */
 	void *			group;							/* The place where we actually store things. */
-	unsigned char	bitmap[BITMAP_SIZE];	/* This is how we store the state of what is occupied in group. */
+	unsigned char	bitmap[BITMAP_SIZE];			/* This is how we store the state of what is occupied in group. */
 	/* bitmap requires some explanation. We use the bitmap to store which
 	 * `offsets` in the array are occupied. We do this through a series
 	 * of bit-testing functions.
-	 *
-	 * The math here (see '#define BITMAP_SIZE`) is, I believe, so that we
-	 * store exactly enough bits for our group size. The math returns the
-	 * minimum number of bytes to hold all the bits we need.
 	 */
 };
 
