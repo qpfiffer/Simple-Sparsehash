@@ -48,7 +48,7 @@ struct sparse_dict {
 struct sparse_array *sparse_array_init(const size_t element_size);
 const int sparse_array_set(struct sparse_array *arr, const size_t i,
 						   const void *val, const size_t vlen);
-const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t outsize);
+const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t *outsize);
 const int sparse_array_free(struct sparse_array *arr);
 
 

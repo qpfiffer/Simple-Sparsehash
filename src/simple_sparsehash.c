@@ -4,6 +4,8 @@
 #include <string.h>
 #include "simple_sparsehash.h"
 
+#define FULL_ELEM_SIZE (arr->elem_size + sizeof(size_t))
+
 /* TODO: Figure out better names for charbit/modbit */
 static const size_t charbit(const size_t position) {
 	/* Get enough bits to store 0 - 7. */
@@ -79,19 +81,40 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	 */
 
 	offset = position_to_offset(arr->bitmap, i);
-	if (is_position_occupied(arr->bitmap, offset)) {
-		return 0;
-	} else {
-		/* Increase the bucket count because we've expanded */
-		arr->count++;
-		return 0;
-	}
+	if (!is_position_occupied(arr->bitmap, offset)) {
+		const size_t to_move_siz = (arr->count - offset) * FULL_ELEM_SIZE;
+		/* We could do a realloc here and some memmove stuff, but this
+		 * is easier to think about. Allocate a new chunk of memory:
+		 */
+		void *new_group = malloc((arr->count + 1) * FULL_ELEM_SIZE);
+		if (new_group == NULL)
+			return 0;
 
+		if (offset * FULL_ELEM_SIZE > 0) {
+			/* Now we move all of the buckets from 0 .. offset to the new
+			 * chunk of memory:
+			 */
+			const size_t to_copy_siz = offset * FULL_ELEM_SIZE;
+			memcpy(new_group, arr->group, to_copy_siz);
+		}
+
+		/* Now take all of the old items and move them up a slot: */
+		if (to_move_siz > 0) {
+			memcpy((unsigned char *)(new_group) + (offset * FULL_ELEM_SIZE + 1),
+					(unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE),
+					to_move_siz);
+		}
+
+		/* Increase the bucket count because we've expanded: */
+		arr->count++;
+		free(arr->group);
+		arr->group = new_group;
+	}
 
 	/* Copy the size into the position, fighting -pedantic the whole
 	 * time.
 	 */
-	destination = (unsigned char *)(arr->group) + (offset * (arr->elem_size + sizeof(size_t)));
+	destination = (unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE);
 	memcpy(destination, &vlen, sizeof(vlen));
 
 	/* Here we mutate a variable because we're writing C and we don't respect
@@ -104,7 +127,7 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 }
 
 const void *sparse_array_get(struct sparse_array *arr,
-							 const size_t i, size_t outsize) {
+							 const size_t i, size_t *outsize) {
 	return NULL;
 }
 

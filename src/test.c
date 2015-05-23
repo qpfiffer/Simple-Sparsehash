@@ -46,11 +46,36 @@ int test_array_set() {
 	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
 
 	assert(sparse_array_free(arr));
-	return 0;
+	return 1;
+}
+
+int test_array_set_overwrites_old_values() {
+	struct sparse_array *arr = NULL;
+	const int test_num = 666;
+	const int test_num2 = 1024;
+	arr = sparse_array_init(sizeof(int));
+	assert(arr);
+
+	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
+	assert(sparse_array_set(arr, 0, &test_num2, sizeof(test_num2)));
+
+	assert(sparse_array_get(arr, 0, NULL) == 1024);
+
+	assert(sparse_array_free(arr));
+	return 1;
 }
 
 int test_array_get() {
-	return 0;
+	struct sparse_array *arr = NULL;
+	const int test_num = 666;
+	arr = sparse_array_init(sizeof(int));
+	assert(arr);
+
+	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
+	assert(sparse_array_get(arr, 0, NULL) == 666);
+
+	assert(sparse_array_free(arr));
+	return 1;
 }
 
 int test_dict_set() {
