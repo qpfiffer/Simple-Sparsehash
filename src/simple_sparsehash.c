@@ -79,7 +79,6 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	 */
 
 	offset = position_to_offset(arr->bitmap, i);
-	/* RESIZE HERE */
 	if (is_position_occupied(arr->bitmap, offset)) {
 		return 0;
 	} else {
@@ -89,9 +88,17 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	}
 
 
-	/* Copy the size into the position */
-	destination = (char *)(arr->group) + (offset * (arr->elem_size + sizeof(size_t)));
+	/* Copy the size into the position, fighting -pedantic the whole
+	 * time.
+	 */
+	destination = (unsigned char *)(arr->group) + (offset * (arr->elem_size + sizeof(size_t)));
 	memcpy(destination, &vlen, sizeof(vlen));
+
+	/* Here we mutate a variable because we're writing C and we don't respect
+	 * anything
+	 */
+	destination = (unsigned char *)destination + sizeof(size_t);
+	memcpy(destination, val, vlen);
 
 	return 1;
 }
