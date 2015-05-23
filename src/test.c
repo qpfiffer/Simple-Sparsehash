@@ -44,9 +44,11 @@ int test_array_set() {
 	assert(arr);
 
 	for (i = 0; i < GROUP_SIZE; i++) {
+		int *returned = NULL;
 		size_t siz = 0;
 		assert(sparse_array_set(arr, i, &i, sizeof(i)));
-		assert(sparse_array_get(arr, i, &siz) == i);
+		returned = (int *)sparse_array_get(arr, i, &siz);
+		assert(*returned == i);
 		assert(siz == sizeof(int));
 	}
 
