@@ -52,6 +52,10 @@ static const int is_position_occupied(const unsigned char *bitmap,
 	return bitmap[charbit(position)] & modbit(position);
 }
 
+static const void set_position(unsigned char *bitmap, const size_t position) {
+	bitmap[charbit(position)] |= modbit(position);
+}
+
 /* Sparse Array */
 struct sparse_array *sparse_array_init(const size_t element_size) {
 	struct sparse_array *arr = NULL;
@@ -109,6 +113,7 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 		arr->count++;
 		free(arr->group);
 		arr->group = new_group;
+		set_position(arr->bitmap, i);
 	}
 
 	/* Copy the size into the position, fighting -pedantic the whole

@@ -37,6 +37,33 @@ int test_cannot_set_bigger_elements() {
 
 }
 
+int test_array_set_backwards() {
+	int i;
+	struct sparse_array *arr = NULL;
+	arr = sparse_array_init(sizeof(int));
+	assert(arr);
+
+	for (i = GROUP_SIZE - 1; i >= 0; i--) {
+		int *returned = NULL;
+		size_t siz = 0;
+		assert(sparse_array_set(arr, i, &i, sizeof(i)));
+		returned = (int *)sparse_array_get(arr, i, &siz);
+		assert(*returned == i);
+		assert(siz == sizeof(int));
+	}
+
+	for (i = GROUP_SIZE - 1; i >= 0; i--) {
+		int *returned = NULL;
+		size_t siz = 0;
+		returned = (int *)sparse_array_get(arr, i, &siz);
+		assert(*returned == i);
+		assert(siz == sizeof(int));
+	}
+
+	assert(sparse_array_free(arr));
+	return 1;
+}
+
 int test_array_set() {
 	int i;
 	struct sparse_array *arr = NULL;
@@ -47,6 +74,15 @@ int test_array_set() {
 		int *returned = NULL;
 		size_t siz = 0;
 		assert(sparse_array_set(arr, i, &i, sizeof(i)));
+		returned = (int *)sparse_array_get(arr, i, &siz);
+		assert(*returned == i);
+		assert(siz == sizeof(int));
+	}
+
+	for (i = 0; i < GROUP_SIZE; i++) {
+		/* Loop through again just to make sure. */
+		int *returned = NULL;
+		size_t siz = 0;
 		returned = (int *)sparse_array_get(arr, i, &siz);
 		assert(*returned == i);
 		assert(siz == sizeof(int));
@@ -137,6 +173,7 @@ int main(int argc, char *argv[]) {
 	begin_tests();
 	run_test(test_cannot_set_bigger_elements);
 	run_test(test_array_set);
+	run_test(test_array_set_backwards);
 	run_test(test_array_get);
 	run_test(test_array_set_overwrites_old_values);
 	run_test(test_array_set_high_num);
