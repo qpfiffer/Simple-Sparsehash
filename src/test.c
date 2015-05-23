@@ -56,6 +56,25 @@ int test_array_set() {
 	return 1;
 }
 
+int test_array_set_high_num() {
+	const int test_num = 65555555;
+	const int index = GROUP_SIZE - 1;
+	int *returned = NULL;
+	size_t siz = 0;
+	struct sparse_array *arr = NULL;
+
+	arr = sparse_array_init(sizeof(int));
+	assert(arr);
+
+	assert(sparse_array_set(arr, index, &test_num, sizeof(test_num)));
+	returned = (int *)sparse_array_get(arr, index, &siz);
+	assert(*returned == test_num);
+	assert(siz == sizeof(int));
+
+	assert(sparse_array_free(arr));
+	return 1;
+}
+
 int test_array_set_overwrites_old_values() {
 	struct sparse_array *arr = NULL;
 	const int test_num = 666;
@@ -120,6 +139,7 @@ int main(int argc, char *argv[]) {
 	run_test(test_array_set);
 	run_test(test_array_get);
 	run_test(test_array_set_overwrites_old_values);
+	run_test(test_array_set_high_num);
 	run_test(test_dict_set);
 	run_test(test_dict_get);
 	finish_tests();
