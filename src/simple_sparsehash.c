@@ -104,7 +104,7 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 
 		/* Now take all of the old items and move them up a slot: */
 		if (to_move_siz > 0) {
-			memcpy((unsigned char *)(new_group) + (offset * FULL_ELEM_SIZE + 1),
+			memcpy((unsigned char *)(new_group) + ((offset + 1) * FULL_ELEM_SIZE),
 					(unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE),
 					to_move_siz);
 		}
@@ -113,6 +113,7 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 		arr->count++;
 		free(arr->group);
 		arr->group = new_group;
+		/* Remember to modify the bitmap: */
 		set_position(arr->bitmap, i);
 	}
 
@@ -125,7 +126,7 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	/* Here we mutate a variable because we're writing C and we don't respect
 	 * anything
 	 */
-	destination = (unsigned char *)destination + sizeof(size_t);
+	destination = (unsigned char *)destination + sizeof(vlen);
 	memcpy(destination, val, vlen);
 
 	return 1;
