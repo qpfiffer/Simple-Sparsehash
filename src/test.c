@@ -174,9 +174,9 @@ int main(int argc, char *argv[]) {
 	run_test(test_cannot_set_bigger_elements);
 	run_test(test_array_set);
 	run_test(test_array_set_backwards);
-	run_test(test_array_get);
 	run_test(test_array_set_overwrites_old_values);
 	run_test(test_array_set_high_num);
+	run_test(test_array_get);
 	run_test(test_dict_set);
 	run_test(test_dict_get);
 	finish_tests();
