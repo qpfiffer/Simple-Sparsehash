@@ -52,7 +52,7 @@ static const int is_position_occupied(const unsigned char *bitmap,
 	return bitmap[charbit(position)] & modbit(position);
 }
 
-static const void set_position(unsigned char *bitmap, const size_t position) {
+static void set_position(unsigned char *bitmap, const size_t position) {
 	bitmap[charbit(position)] |= modbit(position);
 }
 
