@@ -5,6 +5,7 @@
 #include "simple_sparsehash.h"
 
 #define FULL_ELEM_SIZE (arr->elem_size + sizeof(size_t))
+#define MAX_ARR_SIZE ((arr->maximum - 1)/GROUP_SIZE + 1)
 
 /* TODO: Figure out better names for charbit/modbit */
 static const size_t charbit(const size_t position) {
@@ -57,17 +58,7 @@ static void set_position(unsigned char *bitmap, const size_t position) {
 }
 
 /* Sparse Array */
-struct sparse_array *sparse_array_init(const size_t element_size) {
-	struct sparse_array *arr = NULL;
-	arr = calloc(1, sizeof(struct sparse_array));
-	if (arr == NULL)
-		return NULL;
-
-	arr->elem_size = element_size;
-	return arr;
-}
-
-const int sparse_array_set(struct sparse_array *arr, const size_t i,
+static const int _sparse_array_group_set(struct sparse_array_group *arr, const size_t i,
 						   const void *val, const size_t vlen) {
 	size_t offset = 0;
 	void *destination = NULL;
@@ -132,7 +123,7 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	return 1;
 }
 
-const void *sparse_array_get(struct sparse_array *arr,
+static const void *_sparse_array_group_get(struct sparse_array_group *arr,
 							 const size_t i, size_t *outsize) {
 	const size_t offset = position_to_offset(arr->bitmap, i);
 	const unsigned char *item_siz = (unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE);
@@ -144,8 +135,48 @@ const void *sparse_array_get(struct sparse_array *arr,
 	return item;
 }
 
-const int sparse_array_free(struct sparse_array *arr) {
+static const int _sparse_array_group_free(struct sparse_array_group *arr) {
 	free(arr->group);
+	return 1;
+}
+
+struct sparse_array *sparse_array_init(const size_t element_size, const size_t maximum) {
+	int i = 0;
+	struct sparse_array *arr = NULL;
+	arr = calloc(1, sizeof(struct sparse_array));
+	if (arr == NULL)
+		return NULL;
+
+	struct sparse_array stack_array = {
+		.maximum = maximum,
+	};
+
+	memcpy(arr, &stack_array, sizeof(struct sparse_array));
+	arr->groups = calloc(MAX_ARR_SIZE, sizeof(struct sparse_array_group));
+
+	for (i = 0; i < MAX_ARR_SIZE; i++) {
+		struct sparse_array_group *sag = &arr->groups[i];
+		sag->elem_size = element_size;
+	}
+
+	return arr;
+}
+
+const int sparse_array_set(struct sparse_array *arr, const size_t i,
+						   const void *val, const size_t vlen) {
+	return _sparse_array_group_set(&arr->groups[i / GROUP_SIZE], i % GROUP_SIZE, val, vlen);
+}
+
+const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t *outsize) {
+	return _sparse_array_group_get(&arr->groups[i / GROUP_SIZE], i % GROUP_SIZE, outsize);
+}
+
+const int sparse_array_free(struct sparse_array *arr) {
+	int i = 0;
+	for (; i < MAX_ARR_SIZE; i++) {
+		struct sparse_array_group *sag = &arr->groups[i];
+		_sparse_array_group_free(sag);
+	}
 	free(arr);
 	return 1;
 }

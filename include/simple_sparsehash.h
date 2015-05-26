@@ -4,7 +4,9 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+/* The maximum size of each sparse_array_group. */
 #define GROUP_SIZE 48
+
 /* The math here is, I believe, so that we
  * store exactly enough bits for our group size. The math returns the
  * minimum number of bytes to hold all the bits we need.
@@ -21,12 +23,7 @@ struct sparse_bucket {
 	const size_t	vlen;
 };
 
-/* A sparse array is how we store buckets in the sparse_dict. A sparse array
- * is an array that only uses the amount of memory that the objects stored in
- * it requires. That is to say, we aren't wasting space holding "empty" slots
- * in the array.
- */
-struct sparse_array {
+struct sparse_array_group {
 	size_t			count;							/* The number of items currently in this vector. */
 	size_t			elem_size;						/* The maximum size of each element. */
 	void *			group;							/* The place where we actually store things. */
@@ -37,15 +34,20 @@ struct sparse_array {
 	 */
 };
 
+struct sparse_array {
+	const size_t					maximum;		/* The maximum number of items that can be in this array. */
+	struct sparse_array_group		*groups;		/* The number of groups we have. This is (num_buckets/GROUP_SIZE). */
+};
+
 struct sparse_dict {
-	struct sparse_array		**groups;    /* The number of groups we have. This is (num_buckets/GROUP_SIZE). */
+	const size_t bucket_count;
 };
 
 /* ------------ */
 /* Sparse Array */
 /* ------------ */
 
-struct sparse_array *sparse_array_init(const size_t element_size);
+struct sparse_array *sparse_array_init(const size_t element_size, const size_t maximum);
 const int sparse_array_set(struct sparse_array *arr, const size_t i,
 						   const void *val, const size_t vlen);
 const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t *outsize);

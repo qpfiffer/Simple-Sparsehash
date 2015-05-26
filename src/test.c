@@ -27,7 +27,7 @@
 int test_cannot_set_bigger_elements() {
 	struct sparse_array *arr = NULL;
 	const uint64_t test_num = 666;
-	arr = sparse_array_init(sizeof(char));
+	arr = sparse_array_init(sizeof(char), 100);
 	assert(arr);
 
 	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)) == 0);
@@ -39,11 +39,12 @@ int test_cannot_set_bigger_elements() {
 
 int test_array_set_backwards() {
 	int i;
+	const int array_size = 120;
 	struct sparse_array *arr = NULL;
-	arr = sparse_array_init(sizeof(int));
+	arr = sparse_array_init(sizeof(int), array_size);
 	assert(arr);
 
-	for (i = GROUP_SIZE - 1; i >= 0; i--) {
+	for (i = array_size - 1; i >= 0; i--) {
 		int *returned = NULL;
 		size_t siz = 0;
 		assert(sparse_array_set(arr, i, &i, sizeof(i)));
@@ -52,7 +53,7 @@ int test_array_set_backwards() {
 		assert(siz == sizeof(int));
 	}
 
-	for (i = GROUP_SIZE - 1; i >= 0; i--) {
+	for (i = array_size - 1; i >= 0; i--) {
 		int *returned = NULL;
 		size_t siz = 0;
 		returned = (int *)sparse_array_get(arr, i, &siz);
@@ -66,11 +67,12 @@ int test_array_set_backwards() {
 
 int test_array_set() {
 	int i;
+	const int array_size = 130;
 	struct sparse_array *arr = NULL;
-	arr = sparse_array_init(sizeof(int));
+	arr = sparse_array_init(sizeof(int), array_size);
 	assert(arr);
 
-	for (i = 0; i < GROUP_SIZE; i++) {
+	for (i = 0; i < array_size; i++) {
 		int *returned = NULL;
 		size_t siz = 0;
 		assert(sparse_array_set(arr, i, &i, sizeof(i)));
@@ -79,7 +81,7 @@ int test_array_set() {
 		assert(siz == sizeof(int));
 	}
 
-	for (i = 0; i < GROUP_SIZE; i++) {
+	for (i = 0; i < array_size; i++) {
 		/* Loop through again just to make sure. */
 		int *returned = NULL;
 		size_t siz = 0;
@@ -99,7 +101,7 @@ int test_array_set_high_num() {
 	size_t siz = 0;
 	struct sparse_array *arr = NULL;
 
-	arr = sparse_array_init(sizeof(int));
+	arr = sparse_array_init(sizeof(int), 140);
 	assert(arr);
 
 	assert(sparse_array_set(arr, index, &test_num, sizeof(test_num)));
@@ -115,7 +117,7 @@ int test_array_set_overwrites_old_values() {
 	struct sparse_array *arr = NULL;
 	const int test_num = 666;
 	const int test_num2 = 1024;
-	arr = sparse_array_init(sizeof(int));
+	arr = sparse_array_init(sizeof(int), 150);
 	assert(arr);
 
 	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
@@ -131,7 +133,7 @@ int test_array_get() {
 	struct sparse_array *arr = NULL;
 	const int test_num = 666;
 	size_t item_size = 0;
-	arr = sparse_array_init(sizeof(int));
+	arr = sparse_array_init(sizeof(int), 200);
 	assert(arr);
 
 	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
