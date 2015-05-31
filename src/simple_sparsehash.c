@@ -181,6 +181,15 @@ const int sparse_array_free(struct sparse_array *arr) {
 	return 1;
 }
 
+/* This is a helper function that computes how many groups we need to hold the
+ * number of buckets passed int. For instance, if we use GROUP_SIZE = 48, and the
+ * maximum number of buckets we want is 64, then we need two groups minimum to
+ * hold that number of buckets.
+ */
+static unsigned int _number_of_groups_for_buckets(const size_t bucket_num) {
+	return (bucket_num / GROUP_SIZE) + 1;
+}
+
 /* Sparse Dictionary */
 struct sparse_dict *sparse_dict_init() {
 	int i = 0;
@@ -191,13 +200,15 @@ struct sparse_dict *sparse_dict_init() {
 
 	new->bucket_max = STARTING_SIZE;
 	new->bucket_count = 0;
-	new->buckets = calloc(STARTING_SIZE, sizeof(struct sparse_array *));
-	if (new->buckets == NULL)
+	new->group_count = _number_of_groups_for_buckets(STARTING_SIZE);
+	new->groups = malloc(new->group_count * sizeof(struct sparse_array *));
+	if (new->groups == NULL)
 		goto error;
 
-	for (i = 0; i < new->bucket_max; i++) {
-		new->buckets[i] = sparse_array_init(sizeof(struct sparse_bucket), GROUP_SIZE);
-		if (new->buckets[i] == NULL)
+	/* Initialize each group. */
+	for (i = 0; i < new->group_count; i++) {
+		new->groups[i] = sparse_array_init(sizeof(struct sparse_bucket), GROUP_SIZE);
+		if (new->groups[i] == NULL)
 			goto error;
 	}
 
@@ -221,10 +232,10 @@ const void *sparse_dict_get(struct sparse_dict *dict,
 
 const int sparse_dict_free(struct sparse_dict *dict) {
 	int i = 0;
-	for (i = 0; i < dict->bucket_count; i++)
-		sparse_array_free(dict->buckets[i]);
+	for (i = 0; i < dict->group_count; i++)
+		sparse_array_free(dict->groups[i]);
 
-	free(dict->buckets);
+	free(dict->groups);
 	free(dict);
 	return 0;
 }

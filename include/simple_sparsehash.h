@@ -48,7 +48,8 @@ struct sparse_array {
 struct sparse_dict {
 	size_t bucket_max;					/* The current maximum number of buckets in this dictionary. */
 	size_t bucket_count;				/* The number of occupied buckets in this dictionary. */
-	struct sparse_array **buckets;		/* Array of `sparse_array` objects. Defaults to STARTING_SIZE elements in length. */
+	size_t group_count;					/* The number of groups we currently have in **groups. */
+	struct sparse_array **groups;		/* Array of `sparse_array` objects. Defaults to STARTING_SIZE elements in length. */
 };
 
 /* ------------ */
