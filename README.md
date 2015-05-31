@@ -12,3 +12,12 @@ your project and start using them, or build this project and link `-lsimple-spar
   iterators, swapping, deletion, etc.
 * There are no 'default values' of sparse arrays. You access something that
   isn't real? You get `NULL`.
+
+## Eventual TODO
+
+* Store actual items in the arrays, not pointers to items.
+* Resize the table down when it reaches an inverse occupancy or something.
+* Store object size in the dictionary, so that we can make assumptions about
+  array size. Right now it accepts any value, and is slightly slower due to not
+  having any locality of reference, and having to jump to an extra location in
+  memory. Maybe two different versions?

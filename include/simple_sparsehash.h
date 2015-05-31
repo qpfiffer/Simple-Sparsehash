@@ -7,6 +7,12 @@
 /* The maximum size of each sparse_array_group. */
 #define GROUP_SIZE 48
 
+/* The default size of the hash table. Used to init bucket_max. */
+#define STARTING_SIZE 32
+
+/* The default 'should we resize' percentage, out of 100 percent. */
+#define RESIZE_PERCENT 80
+
 /* The math here is, I believe, so that we
  * store exactly enough bits for our group size. The math returns the
  * minimum number of bytes to hold all the bits we need.
@@ -40,7 +46,9 @@ struct sparse_array {
 };
 
 struct sparse_dict {
-	const size_t bucket_count;
+	size_t bucket_max;					/* The current maximum number of buckets in this dictionary. */
+	size_t bucket_count;				/* The number of occupied buckets in this dictionary. */
+	struct sparse_array **buckets;		/* Array of `sparse_array` objects. Defaults to STARTING_SIZE elements in length. */
 };
 
 /* ------------ */

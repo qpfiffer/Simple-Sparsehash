@@ -183,11 +183,29 @@ const int sparse_array_free(struct sparse_array *arr) {
 
 /* Sparse Dictionary */
 struct sparse_dict *sparse_dict_init() {
+	int i = 0;
 	struct sparse_dict *new = NULL;
 	new = calloc(1, sizeof(struct sparse_dict));
 	if (new == NULL)
 		return NULL;
+
+	new->bucket_max = STARTING_SIZE;
+	new->bucket_count = 0;
+	new->buckets = calloc(STARTING_SIZE, sizeof(struct sparse_array *));
+	if (new->buckets == NULL)
+		goto error;
+
+	for (i = 0; i < new->bucket_max; i++) {
+		new->buckets[i] = sparse_array_init(sizeof(struct sparse_bucket), GROUP_SIZE);
+		if (new->buckets[i] == NULL)
+			goto error;
+	}
+
 	return new;
+
+error:
+	free(new);
+	return NULL;
 }
 
 const int sparse_dict_set(struct sparse_dict *dict,
@@ -202,6 +220,11 @@ const void *sparse_dict_get(struct sparse_dict *dict,
 }
 
 const int sparse_dict_free(struct sparse_dict *dict) {
+	int i = 0;
+	for (i = 0; i < dict->bucket_count; i++)
+		sparse_array_free(dict->buckets[i]);
+
+	free(dict->buckets);
 	free(dict);
 	return 0;
 }
