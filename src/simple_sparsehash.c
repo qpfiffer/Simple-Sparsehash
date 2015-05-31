@@ -228,6 +228,35 @@ error:
 	return NULL;
 }
 
+static inline const int _create_and_insert_new_bucket(
+						struct sparse_dict *dict, const unsigned int modulo_val,
+						const char *key, const size_t klen,
+						const void *value, const size_t vlen) {
+	char *copied_key = strndup(key, klen);
+	if (copied_key == NULL)
+		goto error;
+
+	void *copied_value = malloc(vlen);
+	if (copied_value == NULL)
+		goto error;
+	memcpy(copied_value, value, vlen);
+
+	struct sparse_bucket bct = {
+		.key = copied_key,
+		.klen = klen,
+		.val = copied_value,
+		.vlen = vlen
+	};
+
+	if (!sparse_array_set(dict->buckets, modulo_val, &bct, sizeof(bct)))
+		goto error;
+
+	return 1;
+
+error:
+	return 0;
+}
+
 const int sparse_dict_set(struct sparse_dict *dict,
 						  const char *key, const size_t klen,
 						  const void *value, const size_t vlen) {
@@ -242,29 +271,13 @@ const int sparse_dict_set(struct sparse_dict *dict,
 
 	if (current_value_siz == 0 && current_value == NULL) {
 		/* Awesome, the slot we want is empty. Insert as normal. */
-		char *copied_key = strndup(key, klen);
-		if (copied_key == NULL)
-			goto error;
-
-		void *copied_value = malloc(vlen);
-		if (copied_value == NULL)
-			goto error;
-		memcpy(copied_value, value, vlen);
-
-		struct sparse_bucket bct = {
-			.key = copied_key,
-			.klen = klen,
-			.val = copied_value,
-			.vlen = vlen
-		};
-
-		if (!sparse_array_set(dict->buckets, modulo_val, &bct, sizeof(bct)))
+		if (!_create_and_insert_new_bucket(dict, modulo_val, key, klen, value, vlen))
 			goto error;
 	} else {
-		/* Okay, the slot we want is occupied. Is it us? */
-		/* const struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
-		 * if (strncmp(existing_bucket
-		 */
+		unsigned int num_probes = 0;
+		while (num_probes < dict->bucket_count) {
+			num_probes++;
+		}
 	}
 
 	dict->bucket_count++;
