@@ -164,10 +164,15 @@ struct sparse_array *sparse_array_init(const size_t element_size, const size_t m
 
 const int sparse_array_set(struct sparse_array *arr, const size_t i,
 						   const void *val, const size_t vlen) {
+	if (i > arr->maximum)
+		return 0;
+	//struct sparse_array_group = &arr->groups
 	return _sparse_array_group_set(&arr->groups[i / GROUP_SIZE], i % GROUP_SIZE, val, vlen);
 }
 
 const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t *outsize) {
+	if (i > arr->maximum)
+		return NULL;
 	return _sparse_array_group_get(&arr->groups[i / GROUP_SIZE], i % GROUP_SIZE, outsize);
 }
 

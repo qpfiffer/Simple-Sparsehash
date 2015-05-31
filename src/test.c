@@ -24,6 +24,29 @@
 	}
 
 
+int test_cannot_set_outside_bounds() {
+	struct sparse_array *arr = NULL;
+	const uint64_t test_num = 666;
+	arr = sparse_array_init(sizeof(uint64_t), 32);
+	assert(arr);
+
+	assert(sparse_array_set(arr, 35, &test_num, sizeof(test_num)) == 0);
+
+	assert(sparse_array_free(arr));
+	return 1;
+}
+
+int test_cannot_get_outside_bounds() {
+	struct sparse_array *arr = NULL;
+	arr = sparse_array_init(sizeof(uint64_t), 32);
+	assert(arr);
+
+	assert(!sparse_array_get(arr, 35, NULL));
+
+	assert(sparse_array_free(arr));
+	return 1;
+}
+
 int test_cannot_set_bigger_elements() {
 	struct sparse_array *arr = NULL;
 	const uint64_t test_num = 666;
@@ -174,6 +197,8 @@ int test_dict_get() {
 int main(int argc, char *argv[]) {
 	begin_tests();
 	run_test(test_cannot_set_bigger_elements);
+	run_test(test_cannot_set_outside_bounds);
+	run_test(test_cannot_get_outside_bounds);
 	run_test(test_array_set);
 	run_test(test_array_set_backwards);
 	run_test(test_array_set_overwrites_old_values);
