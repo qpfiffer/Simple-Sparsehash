@@ -191,6 +191,7 @@ int test_dict_set() {
 
 int test_dict_get() {
 	struct sparse_dict *dict = NULL;
+	size_t outsize = 0;
 	const char *value = NULL;
 
 	dict = sparse_dict_init();
@@ -198,7 +199,9 @@ int test_dict_get() {
 
 	assert(sparse_dict_set(dict, "key", strlen("key"), "value", strlen("value")));
 
-	value = sparse_dict_get(dict, "key", strlen("key"));
+
+	value = sparse_dict_get(dict, "key", strlen("key"), &outsize);
+	assert(value);
 	assert(strncmp(value, "value", strlen("value")) == 0);
 
 	assert(sparse_dict_free(dict));

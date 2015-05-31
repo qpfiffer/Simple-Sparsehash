@@ -277,8 +277,8 @@ error:
 	return 0;
 }
 
-const void *sparse_dict_get(struct sparse_dict *dict,
-							const char *key, const size_t klen) {
+const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
+							const size_t klen, size_t *outsize) {
 	return NULL;
 }
 

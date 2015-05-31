@@ -75,8 +75,8 @@ const int sparse_dict_set(struct sparse_dict *dict,
 						  const void *value, const size_t vlen);
 
 /* Returns the value of `key` from `dict`. */
-const void *sparse_dict_get(struct sparse_dict *dict,
-							const char *key, const size_t klen);
+const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
+							const size_t klen, size_t *outsize);
 
 /* Frees and cleans up a sparse_dict created with sparse_dict_init(). */
 const int sparse_dict_free(struct sparse_dict *dict);
