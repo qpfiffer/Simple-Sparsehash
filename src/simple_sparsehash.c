@@ -7,6 +7,26 @@
 #define FULL_ELEM_SIZE (arr->elem_size + sizeof(size_t))
 #define MAX_ARR_SIZE ((arr->maximum - 1)/GROUP_SIZE + 1)
 
+/* One of the simplest hashing functions, FNV-1a. See the wikipedia article for more info:
+ * http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+ */
+static const uint64_t hash_fnv1a(const char *key, const size_t klen) {
+	static const uint64_t fnv_prime = 1099511628211ULL;
+	static const uint64_t fnv_offset_bias = 14695981039346656037ULL;
+
+	const int iterations = klen;
+
+	uint8_t i;
+	uint64_t hash = fnv_offset_bias;
+
+	for(i = 0; i < iterations; i++) {
+		hash = hash ^ key[i];
+		hash = hash * fnv_prime;
+	}
+
+	return hash;
+}
+
 /* TODO: Figure out better names for charbit/modbit */
 static const size_t charbit(const size_t position) {
 	/* Get enough bits to store 0 - 7. */
@@ -129,6 +149,9 @@ static const void *_sparse_array_group_get(struct sparse_array_group *arr,
 	const unsigned char *item_siz = (unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE);
 	const void *item = item_siz + sizeof(size_t);
 
+	if (item_siz == NULL)
+		return NULL;
+
 	if (outsize)
 		memcpy(outsize, item_siz, sizeof(size_t));
 
@@ -166,7 +189,6 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 						   const void *val, const size_t vlen) {
 	if (i > arr->maximum)
 		return 0;
-	//struct sparse_array_group = &arr->groups
 	return _sparse_array_group_set(&arr->groups[i / GROUP_SIZE], i % GROUP_SIZE, val, vlen);
 }
 
@@ -186,18 +208,8 @@ const int sparse_array_free(struct sparse_array *arr) {
 	return 1;
 }
 
-/* This is a helper function that computes how many groups we need to hold the
- * number of buckets passed int. For instance, if we use GROUP_SIZE = 48, and the
- * maximum number of buckets we want is 64, then we need two groups minimum to
- * hold that number of buckets.
- */
-static unsigned int _number_of_groups_for_buckets(const size_t bucket_num) {
-	return (bucket_num / GROUP_SIZE) + 1;
-}
-
 /* Sparse Dictionary */
 struct sparse_dict *sparse_dict_init() {
-	int i = 0;
 	struct sparse_dict *new = NULL;
 	new = calloc(1, sizeof(struct sparse_dict));
 	if (new == NULL)
@@ -205,17 +217,9 @@ struct sparse_dict *sparse_dict_init() {
 
 	new->bucket_max = STARTING_SIZE;
 	new->bucket_count = 0;
-	new->group_count = _number_of_groups_for_buckets(STARTING_SIZE);
-	new->groups = malloc(new->group_count * sizeof(struct sparse_array *));
-	if (new->groups == NULL)
+	new->buckets = sparse_array_init(sizeof(struct sparse_bucket), STARTING_SIZE);
+	if (new->buckets == NULL)
 		goto error;
-
-	/* Initialize each group. */
-	for (i = 0; i < new->group_count; i++) {
-		new->groups[i] = sparse_array_init(sizeof(struct sparse_bucket), GROUP_SIZE);
-		if (new->groups[i] == NULL)
-			goto error;
-	}
 
 	return new;
 
@@ -227,6 +231,49 @@ error:
 const int sparse_dict_set(struct sparse_dict *dict,
 						  const char *key, const size_t klen,
 						  const void *value, const size_t vlen) {
+	const uint64_t key_hash = hash_fnv1a(key, klen);
+	const unsigned int modulo_val = key_hash % dict->bucket_max;
+
+	/* First check the array to see if we have an object already stored in
+	 * 'out' position.
+	 */
+	size_t current_value_siz = 0;
+	const void *current_value = sparse_array_get(dict->buckets, modulo_val, &current_value_siz);
+
+	if (current_value_siz == 0 && current_value == NULL) {
+		/* Awesome, the slot we want is empty. Insert as normal. */
+		char *copied_key = strndup(key, klen);
+		if (copied_key == NULL)
+			goto error;
+
+		void *copied_value = malloc(vlen);
+		if (copied_value == NULL)
+			goto error;
+		memcpy(copied_value, value, vlen);
+
+		struct sparse_bucket bct = {
+			.key = copied_key,
+			.klen = klen,
+			.val = copied_value,
+			.vlen = vlen
+		};
+
+		if (!sparse_array_set(dict->buckets, modulo_val, &bct, sizeof(bct)))
+			goto error;
+	} else {
+		/* Okay, the slot we want is occupied. Is it us? */
+		/* const struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
+		 * if (strncmp(existing_bucket
+		 */
+	}
+
+	dict->bucket_count++;
+
+	/* TODO: Resize table here, if we have enough slots occupied. */
+
+	return 1;
+
+error:
 	return 0;
 }
 
@@ -236,11 +283,7 @@ const void *sparse_dict_get(struct sparse_dict *dict,
 }
 
 const int sparse_dict_free(struct sparse_dict *dict) {
-	int i = 0;
-	for (i = 0; i < dict->group_count; i++)
-		sparse_array_free(dict->groups[i]);
-
-	free(dict->groups);
+	free(dict->buckets);
 	free(dict);
 	return 0;
 }
