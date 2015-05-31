@@ -130,7 +130,7 @@ static const void *_sparse_array_group_get(struct sparse_array_group *arr,
 	const void *item = item_siz + sizeof(size_t);
 
 	if (outsize)
-		memcpy(outsize, item, sizeof(size_t));
+		memcpy(outsize, item_siz, sizeof(size_t));
 
 	return item;
 }
