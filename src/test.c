@@ -7,19 +7,18 @@
 #define begin_tests() int test_return_val = 0;\
 					  int tests_failed = 0;\
 					  int tests_run = 0;
-#define run_test(test) printf("%s: ", #test);\
-	test_return_val = test();\
+#define run_test(test) test_return_val = test();\
 	if (!test_return_val) {\
 		tests_failed++;\
-		printf("%c[%dmFailed.%c[%dm\n", 0x1B, 31, 0x1B, 0);\
+		printf("%c[%dmFailed%c[%dm: %s\n", 0x1B, 31, 0x1B, 0, #test);\
 	} else {\
 		tests_run++;\
-		printf("%c[%dmPassed.%c[%dm\n", 0x1B, 32, 0x1B, 0);\
+		printf("%c[%dmPassed%c[%dm: %s\n", 0x1B, 32, 0x1B, 0, #test);\
 	}
 #define finish_tests() printf("\n-----\nTests passed: (%i/%i)\n", tests_run,\
 							  tests_run + tests_failed);
 #define assert(x) if (!x) {\
-		printf("failed on line %i ", __LINE__);\
+		printf("%i: ", __LINE__);\
 		return 0;\
 	}
 
