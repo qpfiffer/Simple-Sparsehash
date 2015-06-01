@@ -6,7 +6,7 @@
 
 #define FULL_ELEM_SIZE (arr->elem_size + sizeof(size_t))
 #define MAX_ARR_SIZE ((arr->maximum - 1)/GROUP_SIZE + 1)
-#define QUADRATIC_PROBE (key_hash & (dict->bucket_max - 1)) + (num_probes * num_probes)
+#define QUADRATIC_PROBE (key_hash + num_probes * num_probes) & (dict->bucket_max - 1)
 
 /* One of the simplest hashing functions, FNV-1a. See the wikipedia article for more info:
  * http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
