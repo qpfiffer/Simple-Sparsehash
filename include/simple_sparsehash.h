@@ -74,7 +74,9 @@ const int sparse_dict_set(struct sparse_dict *dict,
 						  const char *key, const size_t klen,
 						  const void *value, const size_t vlen);
 
-/* Returns the value of `key` from `dict`. */
+/* Returns the value of `key` from `dict`. *outsize will be filled out if it
+ * is non-null.
+ */
 const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 							const size_t klen, size_t *outsize);
 
