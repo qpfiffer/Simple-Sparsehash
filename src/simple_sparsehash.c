@@ -324,7 +324,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 	/* First check the array to see if we have an object already stored in
 	 * 'out' position.
 	 */
-	while (num_probes < dict->bucket_count) {
+	while (1) {
 		size_t current_value_siz = 0;
 		/* Use quadratic probing here to insert into the table.
 		 * Further reading: https://en.wikipedia.org/wiki/Quadratic_probing
@@ -358,6 +358,13 @@ const int sparse_dict_set(struct sparse_dict *dict,
 		}
 
 		num_probes++;
+
+		if (num_probes > dict->bucket_count) {
+			/* If this ever happens something has gone very, very wrong.
+			 * The hash table is full.
+			 */
+			goto error;
+		}
 	}
 
 	dict->bucket_count++;
@@ -376,7 +383,7 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 	const uint64_t key_hash = hash_fnv1a(key, klen);
 	unsigned int num_probes = 0;
 
-	while (num_probes < dict->bucket_count) {
+	while (1) {
 		size_t current_value_siz = 0;
 		const unsigned int probed_val = (key_hash + num_probes * num_probes) % dict->bucket_max;
 		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
@@ -399,13 +406,16 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 		}
 
 		num_probes++;
+
+		if (num_probes > dict->bucket_count)
+			return NULL;
 	}
 
 	return NULL;
 }
 
 const int sparse_dict_free(struct sparse_dict *dict) {
-	free(dict->buckets);
+	sparse_array_free(dict->buckets);
 	free(dict);
-	return 0;
+	return 1;
 }
