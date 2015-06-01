@@ -82,6 +82,7 @@ int test_array_set_backwards() {
 		size_t siz = 0;
 		assert(sparse_array_set(arr, i, &i, sizeof(i)));
 		returned = (int *)sparse_array_get(arr, i, &siz);
+		assert(returned);
 		assert(*returned == i);
 		assert(siz == sizeof(int));
 	}
@@ -139,6 +140,7 @@ int test_array_set_high_num() {
 
 	assert(sparse_array_set(arr, index, &test_num, sizeof(test_num)));
 	returned = (int *)sparse_array_get(arr, index, &siz);
+	assert(returned);
 	assert(*returned == test_num);
 	assert(siz == sizeof(int));
 

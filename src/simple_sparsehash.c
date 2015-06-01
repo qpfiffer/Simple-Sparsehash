@@ -57,7 +57,7 @@ static const size_t position_to_offset(const unsigned char *bitmap,
 	/* Here we loop through the bitmap a char at a time (a char is 8 bits)
 	 * and count the number of 1s in that chunk.
 	 */
-	for (; pos > 8; pos -= 8)
+	for (; pos >= 8; pos -= 8)
 		retval += __builtin_popcount(bitmap[bitmap_iter++]);
 
 	/* This last bit does the same thing as above, but takes care of the
@@ -96,7 +96,7 @@ static const int _sparse_array_group_set(struct sparse_array_group *arr, const s
 	 */
 
 	offset = position_to_offset(arr->bitmap, i);
-	if (!is_position_occupied(arr->bitmap, offset)) {
+	if (!is_position_occupied(arr->bitmap, i)) {
 		const size_t to_move_siz = (arr->count - offset) * FULL_ELEM_SIZE;
 		/* We could do a realloc here and some memmove stuff, but this
 		 * is easier to think about. Allocate a new chunk of memory:
@@ -148,6 +148,9 @@ static const void *_sparse_array_group_get(struct sparse_array_group *arr,
 	const size_t offset = position_to_offset(arr->bitmap, i);
 	const unsigned char *item_siz = (unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE);
 	const void *item = item_siz + sizeof(size_t);
+
+	if (!is_position_occupied(arr->bitmap, i))
+		return NULL;
 
 	if (item_siz == NULL)
 		return NULL;
