@@ -373,6 +373,34 @@ error:
 
 const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 							const size_t klen, size_t *outsize) {
+	const uint64_t key_hash = hash_fnv1a(key, klen);
+	unsigned int num_probes = 0;
+
+	while (num_probes < dict->bucket_count) {
+		size_t current_value_siz = 0;
+		const unsigned int probed_val = (key_hash + num_probes * num_probes) % dict->bucket_max;
+		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
+
+		if (current_value_siz != 0 && current_value != NULL) {
+			/* We have to do a string comparison here because we use quadratic probing.
+			 * The value we pulled from the underlying array could be anything.
+			 */
+			struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
+			const size_t lrgr_key = existing_bucket->klen > klen ? existing_bucket->klen : klen;
+			if (strncmp(existing_bucket->key, key, lrgr_key) == 0) {
+				if (outsize)
+					memcpy(outsize, &existing_bucket->vlen, sizeof(existing_bucket->vlen));
+
+				return existing_bucket->val;
+			}
+		} else {
+			/* We found nothing where we expected something. */
+			return NULL;
+		}
+
+		num_probes++;
+	}
+
 	return NULL;
 }
 
