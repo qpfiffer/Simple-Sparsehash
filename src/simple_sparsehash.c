@@ -6,6 +6,7 @@
 
 #define FULL_ELEM_SIZE (arr->elem_size + sizeof(size_t))
 #define MAX_ARR_SIZE ((arr->maximum - 1)/GROUP_SIZE + 1)
+#define QUADRATIC_PROBE (key_hash & (dict->bucket_max - 1)) + (num_probes * num_probes)
 
 /* One of the simplest hashing functions, FNV-1a. See the wikipedia article for more info:
  * http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
@@ -283,7 +284,7 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 			uint64_t key_hash = hash_fnv1a(bucket->key, bucket->klen);
 			while (1) {
 				/* Quadratically probe along the hash table for an empty slot. */
-				probed_val = (key_hash + num_probes * num_probes) & (new_bucket_max - 1);
+				probed_val = QUADRATIC_PROBE;
 				size_t current_value_siz = 0;
 				const void *current_value = sparse_array_get(new_buckets, probed_val, &current_value_siz);
 
@@ -332,7 +333,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 		/* Use quadratic probing here to insert into the table.
 		 * Further reading: https://en.wikipedia.org/wiki/Quadratic_probing
 		 */
-		const unsigned int probed_val = (key_hash + num_probes * num_probes) & (dict->bucket_max - 1);
+		const unsigned int probed_val = QUADRATIC_PROBE;
 		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
 
 		if (current_value_siz == 0 && current_value == NULL) {
@@ -389,7 +390,7 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 
 	while (1) {
 		size_t current_value_siz = 0;
-		const unsigned int probed_val = (key_hash + num_probes * num_probes) & (dict->bucket_max - 1);
+		const unsigned int probed_val = QUADRATIC_PROBE;
 		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
 
 		if (current_value_siz != 0 && current_value != NULL) {
