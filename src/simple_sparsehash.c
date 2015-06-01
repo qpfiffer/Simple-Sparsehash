@@ -283,7 +283,7 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 			uint64_t key_hash = hash_fnv1a(bucket->key, bucket->klen);
 			while (1) {
 				/* Quadratically probe along the hash table for an empty slot. */
-				probed_val = (key_hash + num_probes * num_probes) % new_bucket_max;
+				probed_val = (key_hash + num_probes * num_probes) & (new_bucket_max - 1);
 				size_t current_value_siz = 0;
 				const void *current_value = sparse_array_get(new_buckets, probed_val, &current_value_siz);
 
@@ -332,7 +332,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 		/* Use quadratic probing here to insert into the table.
 		 * Further reading: https://en.wikipedia.org/wiki/Quadratic_probing
 		 */
-		const unsigned int probed_val = (key_hash + num_probes * num_probes) % dict->bucket_max;
+		const unsigned int probed_val = (key_hash + num_probes * num_probes) & (dict->bucket_max - 1);
 		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
 
 		if (current_value_siz == 0 && current_value == NULL) {
@@ -366,6 +366,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 			/* If this ever happens something has gone very, very wrong.
 			 * The hash table is full.
 			 */
+			printf("Could not find an open slot in the table.\n");
 			goto error;
 		}
 	}
@@ -388,7 +389,7 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 
 	while (1) {
 		size_t current_value_siz = 0;
-		const unsigned int probed_val = (key_hash + num_probes * num_probes) % dict->bucket_max;
+		const unsigned int probed_val = (key_hash + num_probes * num_probes) & (dict->bucket_max - 1);
 		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
 
 		if (current_value_siz != 0 && current_value != NULL) {
