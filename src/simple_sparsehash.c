@@ -229,7 +229,7 @@ error:
 }
 
 static inline const int _create_and_insert_new_bucket(
-						struct sparse_dict *dict, const unsigned int modulo_val,
+						struct sparse_array *array, const unsigned int i,
 						const char *key, const size_t klen,
 						const void *value, const size_t vlen) {
 	char *copied_key = strndup(key, klen);
@@ -248,8 +248,66 @@ static inline const int _create_and_insert_new_bucket(
 		.vlen = vlen
 	};
 
-	if (!sparse_array_set(dict->buckets, modulo_val, &bct, sizeof(bct)))
+	if (!sparse_array_set(array, i, &bct, sizeof(bct)))
 		goto error;
+
+	return 1;
+
+error:
+	return 0;
+}
+
+static const int _rehash_and_grow_table(struct sparse_dict *dict) {
+	/* We've reached our chosen 'rehash the table' point, so
+	 * we need to resize the table now.
+	 */
+	int i = 0, buckets_rehashed = 0;
+	const size_t new_bucket_max = dict->bucket_max * 2;
+	struct sparse_array *new_buckets = NULL;
+
+	new_buckets = sparse_array_init(sizeof(struct sparse_bucket), new_bucket_max);
+	if (new_buckets == NULL)
+		goto error;
+
+	/* Loop through each bucket and stick it into the new array. */
+	for (i = 0; i < dict->bucket_max; i++) {
+		size_t bucket_siz = 0;
+		const struct sparse_bucket *bucket = sparse_array_get(dict->buckets, i, &bucket_siz);
+
+		if (bucket_siz != 0 && bucket != NULL) {
+			/* We found a bucket. */
+			unsigned int probed_val = 0, num_probes = 0;
+			uint64_t key_hash = hash_fnv1a(bucket->key, bucket->klen);
+			while (1) {
+				/* Quadratically probe along the hash table for an empty slot. */
+				probed_val = (key_hash + num_probes * num_probes) % new_bucket_max;
+				size_t current_value_siz = 0;
+				const void *current_value = sparse_array_get(new_buckets, probed_val, &current_value_siz);
+
+				if (current_value_siz == 0 && current_value == NULL)
+					break;
+
+				/* If the following ever happens, there are deeply troubling
+				 * things that no longer make sense in the universe.
+				 */
+				if (num_probes > dict->bucket_count)
+					goto error;
+
+				num_probes++;
+			}
+			_create_and_insert_new_bucket(new_buckets, probed_val, bucket->key, bucket->klen,
+										  bucket->val, bucket->vlen);
+			buckets_rehashed++;
+		}
+
+		/* Short circuit to see if we can quit early: */
+		if (buckets_rehashed == dict->bucket_count)
+			break;
+	}
+
+	sparse_array_free(dict->buckets);
+	dict->buckets = new_buckets;
+	dict->bucket_max = new_bucket_max;
 
 	return 1;
 
@@ -261,28 +319,51 @@ const int sparse_dict_set(struct sparse_dict *dict,
 						  const char *key, const size_t klen,
 						  const void *value, const size_t vlen) {
 	const uint64_t key_hash = hash_fnv1a(key, klen);
-	const unsigned int modulo_val = key_hash % dict->bucket_max;
+	unsigned int num_probes = 0;
 
 	/* First check the array to see if we have an object already stored in
 	 * 'out' position.
 	 */
-	size_t current_value_siz = 0;
-	const void *current_value = sparse_array_get(dict->buckets, modulo_val, &current_value_siz);
+	while (num_probes < dict->bucket_count) {
+		size_t current_value_siz = 0;
+		/* Use quadratic probing here to insert into the table.
+		 * Further reading: https://en.wikipedia.org/wiki/Quadratic_probing
+		 */
+		const unsigned int probed_val = (key_hash + num_probes * num_probes) % dict->bucket_max;
+		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
 
-	if (current_value_siz == 0 && current_value == NULL) {
-		/* Awesome, the slot we want is empty. Insert as normal. */
-		if (!_create_and_insert_new_bucket(dict, modulo_val, key, klen, value, vlen))
-			goto error;
-	} else {
-		unsigned int num_probes = 0;
-		while (num_probes < dict->bucket_count) {
-			num_probes++;
+		if (current_value_siz == 0 && current_value == NULL) {
+			/* Awesome, the slot we want is empty. Insert as normal. */
+			if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen))
+				break;
+			else
+				goto error;
+		} else {
+			/* We found a bucket. Check to see if it has the same key as we do. */
+			struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
+			const size_t lrgr_key = existing_bucket->klen > klen ? existing_bucket->klen : klen;
+			if (strncmp(existing_bucket->key, key, lrgr_key) == 0) {
+				/* Great, we probed along the hashtable and found a bucket with the same key as
+				 * the key we want to insert. Replace it. */
+				free(existing_bucket->key);
+				free(existing_bucket->val);
+				if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen)) {
+					/* We return here because we don't want to execute the 'resize the table'
+					 * logic because we overwrote a bucket instead of adding a new one.
+					 */
+					return 1;
+				} else
+					goto error;
+			}
 		}
+
+		num_probes++;
 	}
 
 	dict->bucket_count++;
 
-	/* TODO: Resize table here, if we have enough slots occupied. */
+	if (dict->bucket_count / dict->bucket_max > RESIZE_PERCENT)
+		return _rehash_and_grow_table(dict);
 
 	return 1;
 

@@ -23,9 +23,9 @@
  * make up a sparse dictionary.
  */
 struct sparse_bucket {
-	const char		*key;
+	char			*key;
 	const size_t	klen;
-	const void		*val;
+	void			*val;
 	const size_t	vlen;
 };
 
