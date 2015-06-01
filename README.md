@@ -21,3 +21,4 @@ your project and start using them, or build this project and link `-lsimple-spar
   array size. Right now it accepts any value, and is slightly slower due to not
   having any locality of reference, and having to jump to an extra location in
   memory. Maybe two different versions?
+* Be able to delete things from the hashtable
