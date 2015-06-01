@@ -374,7 +374,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 
 	dict->bucket_count++;
 
-	if (dict->bucket_count / dict->bucket_max > RESIZE_PERCENT)
+	if (dict->bucket_count / (float)dict->bucket_max >= RESIZE_PERCENT/100.0f)
 		return _rehash_and_grow_table(dict);
 
 	return 1;
