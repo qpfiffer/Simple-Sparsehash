@@ -217,7 +217,7 @@ int test_dict_lots_of_set() {
 	dict = sparse_dict_init();
 	assert(dict);
 
-	for (i = 0; i < 10000; i++) {
+	for (i = 0; i < 10000000; i++) {
 		char key[64] = {0};
 		snprintf(key, sizeof(key), "crazy hash%i", i);
 
