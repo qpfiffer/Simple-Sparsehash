@@ -6,7 +6,7 @@
 
 #define FULL_ELEM_SIZE (arr->elem_size + sizeof(size_t))
 #define MAX_ARR_SIZE ((arr->maximum - 1)/GROUP_SIZE + 1)
-#define QUADRATIC_PROBE (key_hash + num_probes * num_probes) & (dict->bucket_max - 1)
+#define QUADRATIC_PROBE(maximum) (key_hash + num_probes * num_probes) & (maximum - 1)
 
 /* One of the simplest hashing functions, FNV-1a. See the wikipedia article for more info:
  * http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
@@ -232,15 +232,16 @@ error:
 	return NULL;
 }
 
-static inline const int _create_and_insert_new_bucket(
+static const int _create_and_insert_new_bucket(
 						struct sparse_array *array, const unsigned int i,
 						const char *key, const size_t klen,
 						const void *value, const size_t vlen) {
+	void *copied_value = NULL;
 	char *copied_key = strndup(key, klen);
 	if (copied_key == NULL)
 		goto error;
 
-	void *copied_value = malloc(vlen);
+	copied_value = malloc(vlen);
 	if (copied_value == NULL)
 		goto error;
 	memcpy(copied_value, value, vlen);
@@ -258,6 +259,8 @@ static inline const int _create_and_insert_new_bucket(
 	return 1;
 
 error:
+	free(copied_value);
+	free(copied_key);
 	return 0;
 }
 
@@ -284,7 +287,7 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 			uint64_t key_hash = hash_fnv1a(bucket->key, bucket->klen);
 			while (1) {
 				/* Quadratically probe along the hash table for an empty slot. */
-				probed_val = QUADRATIC_PROBE;
+				probed_val = QUADRATIC_PROBE(new_bucket_max);
 				size_t current_value_siz = 0;
 				const void *current_value = sparse_array_get(new_buckets, probed_val, &current_value_siz);
 
@@ -333,7 +336,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 		/* Use quadratic probing here to insert into the table.
 		 * Further reading: https://en.wikipedia.org/wiki/Quadratic_probing
 		 */
-		const unsigned int probed_val = QUADRATIC_PROBE;
+		const unsigned int probed_val = QUADRATIC_PROBE(dict->bucket_max);
 		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
 
 		if (current_value_siz == 0 && current_value == NULL) {
@@ -356,8 +359,9 @@ const int sparse_dict_set(struct sparse_dict *dict,
 					 * logic because we overwrote a bucket instead of adding a new one.
 					 */
 					return 1;
-				} else
+				} else {
 					goto error;
+				}
 			}
 		}
 
@@ -390,7 +394,7 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 
 	while (1) {
 		size_t current_value_siz = 0;
-		const unsigned int probed_val = QUADRATIC_PROBE;
+		const unsigned int probed_val = QUADRATIC_PROBE(dict->bucket_max);
 		const void *current_value = sparse_array_get(dict->buckets, probed_val, &current_value_siz);
 
 		if (current_value_siz != 0 && current_value != NULL) {
