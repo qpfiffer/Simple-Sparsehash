@@ -217,7 +217,8 @@ int test_dict_lots_of_set() {
 	dict = sparse_dict_init();
 	assert(dict);
 
-	for (i = 0; i < 10000000; i++) {
+	const int iterations = 1000000;
+	for (i = 0; i < iterations; i++) {
 		char key[64] = {0};
 		snprintf(key, sizeof(key), "crazy hash%i", i);
 
@@ -226,6 +227,21 @@ int test_dict_lots_of_set() {
 
 		assert(sparse_dict_set(dict, key, strlen(key), val, strlen(val)));
 		assert(dict->bucket_count == i + 1);
+
+		size_t outsize = 0;
+		const char *retrieved_value = sparse_dict_get(dict, key, strlen(key), &outsize);
+		assert(retrieved_value);
+		assert(outsize == strlen(val));
+		assert(strncmp(retrieved_value, val, outsize) == 0);
+	}
+
+	for (i = iterations - 1; i >= 0; i--) {
+		/* Do they same thing but just retrieve values. */
+		char key[64] = {0};
+		snprintf(key, sizeof(key), "crazy hash%i", i);
+
+		char val[64] = {0};
+		snprintf(val, sizeof(val), "value%i", i);
 
 		size_t outsize = 0;
 		const char *retrieved_value = sparse_dict_get(dict, key, strlen(key), &outsize);
