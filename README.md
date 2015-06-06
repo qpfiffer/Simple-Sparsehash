@@ -1,3 +1,5 @@
+## What is it?
+
 This is a simple reimplementation of Google's [SparseHash](https://code.google.com/p/sparsehash/)
 library intended as both a learning and teaching excercise.
 
@@ -5,6 +7,10 @@ library intended as both a learning and teaching excercise.
 
 Either copy `./include/simple_sparsehash.h` and `./src/simple_sparsehash.c` into
 your project and start using them, or build this project and link `-lsimple-sparsehash`.
+
+## Tests
+
+Just `make && ./run_tests.sh`.
 
 ## Differences between the official version
 
@@ -22,3 +28,4 @@ your project and start using them, or build this project and link `-lsimple-spar
   having any locality of reference, and having to jump to an extra location in
   memory. Maybe two different versions?
 * Be able to delete things from the hashtable
+* Refactor the get/set/rehash methods. They've got some really similar code.

@@ -69,6 +69,7 @@ static const size_t position_to_offset(const unsigned char *bitmap,
 	return retval + __builtin_popcount(bitmap[bitmap_iter] & ((1 << pos) - 1));
 }
 
+/* Simple check to see whether a slot in the array is occupied or not. */
 static const int is_position_occupied(const unsigned char *bitmap,
 							 const size_t position) {
 	return bitmap[charbit(position)] & modbit(position);
@@ -136,7 +137,7 @@ static const int _sparse_array_group_set(struct sparse_array_group *arr, const s
 	memcpy(destination, &vlen, sizeof(vlen));
 
 	/* Here we mutate a variable because we're writing C and we don't respect
-	 * anything
+	 * anything.
 	 */
 	destination = (unsigned char *)destination + sizeof(vlen);
 	memcpy(destination, val, vlen);
@@ -153,9 +154,15 @@ static const void *_sparse_array_group_get(struct sparse_array_group *arr,
 	if (!is_position_occupied(arr->bitmap, i))
 		return NULL;
 
+	/* In a perfect world you could store 0 sized items and have that mean
+	 * something, but I'll tolerate none of that right now.
+	 */
 	if (item_siz == NULL)
 		return NULL;
 
+	/* If the user wants to know the size (outsize is non-null), write it
+	 * out.
+	 */
 	if (outsize)
 		memcpy(outsize, item_siz, sizeof(size_t));
 
@@ -170,16 +177,27 @@ static const int _sparse_array_group_free(struct sparse_array_group *arr) {
 struct sparse_array *sparse_array_init(const size_t element_size, const size_t maximum) {
 	int i = 0;
 	struct sparse_array *arr = NULL;
+	/* CHECK YOUR SYSCALL RETURNS. Listen to djb. */
 	arr = calloc(1, sizeof(struct sparse_array));
 	if (arr == NULL)
 		return NULL;
 
+	/* This is a non-obvious hack I use. If we have const variables in a
+	 * struct then to initialize them we can either cast them or use an
+	 * initializer like this.
+	 * Then we copy it into a heap-allocated blob. The compiler lets us
+	 * do this.
+	 */
 	struct sparse_array stack_array = {
 		.maximum = maximum,
 	};
 
 	memcpy(arr, &stack_array, sizeof(struct sparse_array));
 	arr->groups = calloc(MAX_ARR_SIZE, sizeof(struct sparse_array_group));
+	if (arr->groups == NULL) {
+		free(arr);
+		return NULL;
+	}
 
 	for (i = 0; i < MAX_ARR_SIZE; i++) {
 		struct sparse_array_group *sag = &arr->groups[i];
@@ -191,15 +209,23 @@ struct sparse_array *sparse_array_init(const size_t element_size, const size_t m
 
 const int sparse_array_set(struct sparse_array *arr, const size_t i,
 						   const void *val, const size_t vlen) {
+	/* Don't let users set outside the bounds of the array. */
 	if (i > arr->maximum)
 		return 0;
-	return _sparse_array_group_set(&arr->groups[i / GROUP_SIZE], i % GROUP_SIZE, val, vlen);
+	/* Since our hashtable is divided into many arrays, we need to pick the one
+	 * relevant to `i` in this case:
+	 */
+	struct sparse_array_group *operating_group = &arr->groups[i / GROUP_SIZE];
+	const int position = i % GROUP_SIZE;
+	return _sparse_array_group_set(operating_group, position, val, vlen);
 }
 
 const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t *outsize) {
 	if (i > arr->maximum)
 		return NULL;
-	return _sparse_array_group_get(&arr->groups[i / GROUP_SIZE], i % GROUP_SIZE, outsize);
+	struct sparse_array_group *operating_group = &arr->groups[i / GROUP_SIZE];
+	const int position = i % GROUP_SIZE;
+	return _sparse_array_group_get(operating_group, position, outsize);
 }
 
 const int sparse_array_free(struct sparse_array *arr) {
@@ -312,6 +338,7 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 			break;
 	}
 
+	/* Finally, swap out the old array with the new one: */
 	sparse_array_free(dict->buckets);
 	dict->buckets = new_buckets;
 	dict->bucket_max = new_bucket_max;
@@ -356,7 +383,8 @@ const int sparse_dict_set(struct sparse_dict *dict,
 				free(existing_bucket->val);
 				if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen)) {
 					/* We return here because we don't want to execute the 'resize the table'
-					 * logic because we overwrote a bucket instead of adding a new one.
+					 * logic. We overwrote a bucket instead of adding a new one, so we know
+					 * we don't need to resize anything.
 					 */
 					return 1;
 				} else {
@@ -378,6 +406,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 
 	dict->bucket_count++;
 
+	/* See if we've hit our 'we should rehash the table' occupancy number: */
 	if (dict->bucket_count / (float)dict->bucket_max >= RESIZE_PERCENT/100.0f)
 		return _rehash_and_grow_table(dict);
 
