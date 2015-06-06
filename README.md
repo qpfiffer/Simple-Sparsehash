@@ -6,7 +6,15 @@ library intended as both a learning and teaching excercise.
 ## How do I use it?
 
 Either copy `./include/simple_sparsehash.h` and `./src/simple_sparsehash.c` into
-your project and start using them, or build this project and link `-lsimple-sparsehash`.
+your project and start using them, or:
+
+```
+    make
+    sudo make install
+```
+
+Then when you build your project just pass link to the shared library with
+`-lsimple-sparsehash`.
 
 ## Tests
 
