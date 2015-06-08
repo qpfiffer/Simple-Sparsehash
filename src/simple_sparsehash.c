@@ -41,6 +41,21 @@ static const size_t modbit(const size_t position) {
 	return 1 << (position & 7);
 }
 
+/* This is one of the popcount implementations from Wikipedia, modified
+ * to work on uint8_ts.
+ * http://en.wikipedia.org/wiki/Hamming_weight
+ */
+static inline uint8_t popcount_8(uint8_t x) {
+	uint8_t m1 = 0x55;
+	uint8_t m2 = 0x33;
+	uint8_t m4 = 0x0f;
+	x -= (x >> 1) & m1;
+	x = (x & m2) + ((x >> 2) & m2);
+	x = (x + (x >> 4)) & m4;
+	x += x >>  8;
+	return (x + (x >> 16)) & 0x3f;
+}
+
 /* This function is used to map an item's 'position' (the user-facing index
  * into the array) with the 'offset' which is the actual position in the
  * array, memory-wise.
@@ -49,24 +64,24 @@ static const size_t modbit(const size_t position) {
  * 0 .. i-1 in the bitmap. The original implementation uses a big table for the
  * popcount, I've opted to just use a GCC builtin.
  */
-static const size_t position_to_offset(const unsigned char *bitmap,
-									   const size_t position) {
-	size_t retval = 0;
-	size_t pos = position;
-	size_t bitmap_iter = 0;
+static const uint16_t position_to_offset(const unsigned char *bitmap,
+									   const uint16_t position) {
+	uint16_t retval = 0;
+	uint16_t pos = position;
+	uint16_t bitmap_iter = 0;
 
 	/* Here we loop through the bitmap a char at a time (a char is 8 bits)
 	 * and count the number of 1s in that chunk.
 	 */
-	for (; pos >= 8; pos -= 8)
-		retval += __builtin_popcount(bitmap[bitmap_iter++]);
+	for (; pos > 8; pos -= 8)
+		retval += popcount_8(bitmap[bitmap_iter++]);
 
 	/* This last bit does the same thing as above, but takes care of the
 	 * remainder that didn't fit cleanly into the 8 x 8 x 8 ... loop above. That
 	 * is to say, it grabs the last 0 - 7 bits and adds the number of 1s in it to
 	 * retval.
 	 */
-	return retval + __builtin_popcount(bitmap[bitmap_iter] & ((1 << pos) - 1));
+	return retval + popcount_8(bitmap[bitmap_iter] & ((1 << pos) - 1));
 }
 
 /* Simple check to see whether a slot in the array is occupied or not. */
