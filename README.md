@@ -37,3 +37,4 @@ Just `make && ./run_tests.sh`.
   memory. Maybe two different versions?
 * Be able to delete things from the hashtable
 * Refactor the get/set/rehash methods. They've got some really similar code.
+* Speed it up, it's currently pretty damn slow.
