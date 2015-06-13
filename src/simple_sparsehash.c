@@ -45,10 +45,10 @@ static const size_t modbit(const size_t position) {
  * to work on uint8_ts.
  * http://en.wikipedia.org/wiki/Hamming_weight
  */
-static inline uint8_t popcount_8(uint8_t x) {
-	uint8_t m1 = 0x55;
-	uint8_t m2 = 0x33;
-	uint8_t m4 = 0x0f;
+static inline uint32_t popcount_8(uint32_t x) {
+	const uint32_t m1 = 0x55555555;
+	const uint32_t m2 = 0x33333333;
+	const uint32_t m4 = 0x0f0f0f0f;
 	x -= (x >> 1) & m1;
 	x = (x & m2) + ((x >> 2) & m2);
 	x = (x + (x >> 4)) & m4;
@@ -64,11 +64,11 @@ static inline uint8_t popcount_8(uint8_t x) {
  * 0 .. i-1 in the bitmap. The original implementation uses a big table for the
  * popcount, I've opted to just use a GCC builtin.
  */
-static const uint16_t position_to_offset(const unsigned char *bitmap,
-									   const uint16_t position) {
-	uint16_t retval = 0;
-	uint16_t pos = position;
-	uint16_t bitmap_iter = 0;
+static const uint32_t position_to_offset(const unsigned char *bitmap,
+									   const uint32_t position) {
+	uint32_t retval = 0;
+	uint32_t pos = position;
+	uint32_t bitmap_iter = 0;
 
 	/* Here we loop through the bitmap a char at a time (a char is 8 bits)
 	 * and count the number of 1s in that chunk.
