@@ -471,6 +471,17 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 }
 
 const int sparse_dict_free(struct sparse_dict *dict) {
+	int i = 0;
+	for (i = 0; i < dict->bucket_max; i++) {
+		size_t current_value_siz = 0;
+		const void *current_value = sparse_array_get(dict->buckets, i, &current_value_siz);
+
+		if (current_value_siz != 0 && current_value != NULL) {
+			struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
+			free(existing_bucket->key);
+			free(existing_bucket->val);
+		}
+	}
 	sparse_array_free(dict->buckets);
 	free(dict);
 	return 1;
