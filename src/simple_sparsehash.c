@@ -395,13 +395,15 @@ const int sparse_dict_set(struct sparse_dict *dict,
 			if (strncmp(existing_bucket->key, key, lrgr_key) == 0) {
 				/* Great, we probed along the hashtable and found a bucket with the same key as
 				 * the key we want to insert. Replace it. */
-				free(existing_bucket->key);
-				free(existing_bucket->val);
+				char *existing_key = existing_bucket->key;
+				void *existing_val = existing_bucket->val;
 				if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen)) {
 					/* We return here because we don't want to execute the 'resize the table'
 					 * logic. We overwrote a bucket instead of adding a new one, so we know
 					 * we don't need to resize anything.
 					 */
+					free(existing_key);
+					free(existing_val);
 					return 1;
 				} else {
 					goto error;
