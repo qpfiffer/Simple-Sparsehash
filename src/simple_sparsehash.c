@@ -249,6 +249,7 @@ const int sparse_array_free(struct sparse_array *arr) {
 		struct sparse_array_group *sag = &arr->groups[i];
 		_sparse_array_group_free(sag);
 	}
+	free(arr->groups);
 	free(arr);
 	return 1;
 }
