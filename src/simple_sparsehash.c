@@ -29,23 +29,22 @@ static const uint64_t hash_fnv1a(const char *key, const size_t klen) {
 }
 
 /* TODO: Figure out better names for charbit/modbit */
-static const size_t charbit(const size_t position) {
-	/* Get enough bits to store 0 - 7. */
-	return position >> 3;
+static const uint32_t charbit(const uint32_t position) {
+	/* Get enough bits to store 0 - 31. */
+	return position >> 5;
 }
 
-static const size_t modbit(const size_t position) {
+static const uint32_t modbit(const uint32_t position) {
 	/* Get the number of bits of this number that are 0 - 7,
 	 * or something like that.
 	 */
-	return 1 << (position & 7);
+	return 1 << (position & 31);
 }
 
-/* This is one of the popcount implementations from Wikipedia, modified
- * to work on uint8_ts.
+/* This is one of the popcount implementations from Wikipedia.
  * http://en.wikipedia.org/wiki/Hamming_weight
  */
-static inline uint32_t popcount_8(uint32_t x) {
+static inline uint32_t popcount_32(uint32_t x) {
 	const uint32_t m1 = 0x55555555;
 	const uint32_t m2 = 0x33333333;
 	const uint32_t m4 = 0x0f0f0f0f;
@@ -64,40 +63,40 @@ static inline uint32_t popcount_8(uint32_t x) {
  * 0 .. i-1 in the bitmap. The original implementation uses a big table for the
  * popcount, I've opted to just use a GCC builtin.
  */
-static const uint32_t position_to_offset(const unsigned char *bitmap,
+static const uint32_t position_to_offset(const uint32_t *bitmap,
 									   const uint32_t position) {
 	uint32_t retval = 0;
 	uint32_t pos = position;
 	uint32_t bitmap_iter = 0;
 
-	/* Here we loop through the bitmap a char at a time (a char is 8 bits)
-	 * and count the number of 1s in that chunk.
+	/* Here we loop through the bitmap a uint32_t at a time, and count the number
+	 * of 1s in that chunk.
 	 */
-	for (; pos > 8; pos -= 8)
-		retval += popcount_8(bitmap[bitmap_iter++]);
+	for (; pos >= BITCHUNK_SIZE; pos -= BITCHUNK_SIZE)
+		retval += popcount_32(bitmap[bitmap_iter++]);
 
 	/* This last bit does the same thing as above, but takes care of the
-	 * remainder that didn't fit cleanly into the 8 x 8 x 8 ... loop above. That
+	 * remainder that didn't fit cleanly into the 32 x 32 x 32 ... loop above. That
 	 * is to say, it grabs the last 0 - 7 bits and adds the number of 1s in it to
 	 * retval.
 	 */
-	return retval + popcount_8(bitmap[bitmap_iter] & ((1 << pos) - 1));
+	return retval + popcount_32(bitmap[bitmap_iter] & ((1 << pos) - 1));
 }
 
 /* Simple check to see whether a slot in the array is occupied or not. */
-static const int is_position_occupied(const unsigned char *bitmap,
-							 const size_t position) {
+static const int is_position_occupied(const uint32_t *bitmap,
+							 const uint32_t position) {
 	return bitmap[charbit(position)] & modbit(position);
 }
 
-static void set_position(unsigned char *bitmap, const size_t position) {
+static void set_position(uint32_t *bitmap, const uint32_t position) {
 	bitmap[charbit(position)] |= modbit(position);
 }
 
 /* Sparse Array */
-static const int _sparse_array_group_set(struct sparse_array_group *arr, const size_t i,
+static const int _sparse_array_group_set(struct sparse_array_group *arr, const uint32_t i,
 						   const void *val, const size_t vlen) {
-	size_t offset = 0;
+	uint32_t offset = 0;
 	void *destination = NULL;
 	if (vlen > arr->elem_size)
 		return 0;
@@ -161,8 +160,8 @@ static const int _sparse_array_group_set(struct sparse_array_group *arr, const s
 }
 
 static const void *_sparse_array_group_get(struct sparse_array_group *arr,
-							 const size_t i, size_t *outsize) {
-	const size_t offset = position_to_offset(arr->bitmap, i);
+							 const uint32_t i, size_t *outsize) {
+	const uint32_t offset = position_to_offset(arr->bitmap, i);
 	const unsigned char *item_siz = (unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE);
 	const void *item = item_siz + sizeof(size_t);
 
@@ -189,7 +188,7 @@ static const int _sparse_array_group_free(struct sparse_array_group *arr) {
 	return 1;
 }
 
-struct sparse_array *sparse_array_init(const size_t element_size, const size_t maximum) {
+struct sparse_array *sparse_array_init(const size_t element_size, const uint32_t maximum) {
 	int i = 0;
 	struct sparse_array *arr = NULL;
 	/* CHECK YOUR SYSCALL RETURNS. Listen to djb. */
@@ -222,7 +221,7 @@ struct sparse_array *sparse_array_init(const size_t element_size, const size_t m
 	return arr;
 }
 
-const int sparse_array_set(struct sparse_array *arr, const size_t i,
+const int sparse_array_set(struct sparse_array *arr, const uint32_t i,
 						   const void *val, const size_t vlen) {
 	/* Don't let users set outside the bounds of the array. */
 	if (i > arr->maximum)
@@ -235,7 +234,7 @@ const int sparse_array_set(struct sparse_array *arr, const size_t i,
 	return _sparse_array_group_set(operating_group, position, val, vlen);
 }
 
-const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t *outsize) {
+const void *sparse_array_get(struct sparse_array *arr, const uint32_t i, size_t *outsize) {
 	if (i > arr->maximum)
 		return NULL;
 	struct sparse_array_group *operating_group = &arr->groups[i / GROUP_SIZE];

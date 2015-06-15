@@ -17,7 +17,8 @@
  * store exactly enough bits for our group size. The math returns the
  * minimum number of bytes to hold all the bits we need.
  */
-#define BITMAP_SIZE (GROUP_SIZE-1)/8 + 1
+#define BITCHUNK_SIZE (sizeof(uint32_t) * 8)
+#define BITMAP_SIZE (GROUP_SIZE-1)/BITCHUNK_SIZE + 1
 
 /* These are the objects that get stored in the sparse arrays that
  * make up a sparse dictionary.
@@ -30,10 +31,10 @@ struct sparse_bucket {
 };
 
 struct sparse_array_group {
-	size_t			count;							/* The number of items currently in this vector. */
+	uint32_t		count;							/* The number of items currently in this vector. */
 	size_t			elem_size;						/* The maximum size of each element. */
 	void *			group;							/* The place where we actually store things. */
-	unsigned char	bitmap[BITMAP_SIZE];			/* This is how we store the state of what is occupied in group. */
+	uint32_t		bitmap[BITMAP_SIZE];			/* This is how we store the state of what is occupied in group. */
 	/* bitmap requires some explanation. We use the bitmap to store which
 	 * `offsets` in the array are occupied. We do this through a series
 	 * of bit-testing functions.
@@ -55,10 +56,10 @@ struct sparse_dict {
 /* Sparse Array */
 /* ------------ */
 
-struct sparse_array *sparse_array_init(const size_t element_size, const size_t maximum);
-const int sparse_array_set(struct sparse_array *arr, const size_t i,
+struct sparse_array *sparse_array_init(const size_t element_size, const uint32_t maximum);
+const int sparse_array_set(struct sparse_array *arr, const uint32_t i,
 						   const void *val, const size_t vlen);
-const void *sparse_array_get(struct sparse_array *arr, const size_t i, size_t *outsize);
+const void *sparse_array_get(struct sparse_array *arr, const uint32_t i, size_t *outsize);
 const int sparse_array_free(struct sparse_array *arr);
 
 
