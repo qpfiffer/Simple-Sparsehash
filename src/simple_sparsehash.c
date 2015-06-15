@@ -343,8 +343,9 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 
 				num_probes++;
 			}
-			_create_and_insert_new_bucket(new_buckets, probed_val, bucket->key, bucket->klen,
-										  bucket->val, bucket->vlen);
+			if (!sparse_array_set(new_buckets, probed_val,
+						bucket, sizeof(struct sparse_bucket)))
+				goto error;
 			buckets_rehashed++;
 		}
 
@@ -361,6 +362,8 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 	return 1;
 
 error:
+	if (new_buckets)
+		sparse_array_free(new_buckets);
 	return 0;
 }
 
