@@ -80,7 +80,7 @@ static const uint32_t position_to_offset(const uint32_t *bitmap,
 	 * is to say, it grabs the last 0 - 7 bits and adds the number of 1s in it to
 	 * retval.
 	 */
-	return retval + popcount_32(bitmap[bitmap_iter] & ((1 << pos) - 1));
+	return retval + popcount_32(bitmap[bitmap_iter] & (((uint32_t)1 << pos) - 1u));
 }
 
 /* Simple check to see whether a slot in the array is occupied or not. */
