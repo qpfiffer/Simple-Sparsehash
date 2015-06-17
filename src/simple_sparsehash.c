@@ -276,7 +276,8 @@ error:
 static const int _create_and_insert_new_bucket(
 						struct sparse_array *array, const unsigned int i,
 						const char *key, const size_t klen,
-						const void *value, const size_t vlen) {
+						const void *value, const size_t vlen,
+						const uint64_t key_hash) {
 	void *copied_value = NULL;
 	char *copied_key = strndup(key, klen);
 	if (copied_key == NULL)
@@ -291,7 +292,8 @@ static const int _create_and_insert_new_bucket(
 		.key = copied_key,
 		.klen = klen,
 		.val = copied_value,
-		.vlen = vlen
+		.vlen = vlen,
+		.hash = key_hash
 	};
 
 	if (!sparse_array_set(array, i, &bct, sizeof(bct)))
@@ -325,7 +327,7 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 		if (bucket_siz != 0 && bucket != NULL) {
 			/* We found a bucket. */
 			unsigned int probed_val = 0, num_probes = 0;
-			uint64_t key_hash = hash_fnv1a(bucket->key, bucket->klen);
+			uint64_t key_hash = bucket->hash;
 			while (1) {
 				/* Quadratically probe along the hash table for an empty slot. */
 				probed_val = QUADRATIC_PROBE(new_bucket_max);
@@ -386,7 +388,7 @@ const int sparse_dict_set(struct sparse_dict *dict,
 
 		if (current_value_siz == 0 && current_value == NULL) {
 			/* Awesome, the slot we want is empty. Insert as normal. */
-			if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen))
+			if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen, key_hash))
 				break;
 			else
 				goto error;
@@ -394,12 +396,12 @@ const int sparse_dict_set(struct sparse_dict *dict,
 			/* We found a bucket. Check to see if it has the same key as we do. */
 			struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
 			const size_t lrgr_key = existing_bucket->klen > klen ? existing_bucket->klen : klen;
-			if (strncmp(existing_bucket->key, key, lrgr_key) == 0) {
+			if (existing_bucket->hash == key_hash && strncmp(existing_bucket->key, key, lrgr_key) == 0) {
 				/* Great, we probed along the hashtable and found a bucket with the same key as
 				 * the key we want to insert. Replace it. */
 				char *existing_key = existing_bucket->key;
 				void *existing_val = existing_bucket->val;
-				if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen)) {
+				if (_create_and_insert_new_bucket(dict->buckets, probed_val, key, klen, value, vlen, key_hash)) {
 					/* We return here because we don't want to execute the 'resize the table'
 					 * logic. We overwrote a bucket instead of adding a new one, so we know
 					 * we don't need to resize anything.
@@ -452,7 +454,7 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 			 */
 			struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
 			const size_t lrgr_key = existing_bucket->klen > klen ? existing_bucket->klen : klen;
-			if (strncmp(existing_bucket->key, key, lrgr_key) == 0) {
+			if (existing_bucket->hash == key_hash && strncmp(existing_bucket->key, key, lrgr_key) == 0) {
 				if (outsize)
 					memcpy(outsize, &existing_bucket->vlen, sizeof(existing_bucket->vlen));
 

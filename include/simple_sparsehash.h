@@ -28,6 +28,7 @@ struct sparse_bucket {
 	const size_t	klen;
 	void			*val;
 	const size_t	vlen;
+	const uint64_t	hash;
 };
 
 struct sparse_array_group {
