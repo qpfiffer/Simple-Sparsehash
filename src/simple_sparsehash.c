@@ -171,7 +171,7 @@ static const void *_sparse_array_group_get(struct sparse_array_group *arr,
 	/* In a perfect world you could store 0 sized items and have that mean
 	 * something, but I'll tolerate none of that right now.
 	 */
-	if (item_siz == NULL)
+	if (*(size_t *)item_siz == 0)
 		return NULL;
 
 	/* If the user wants to know the size (outsize is non-null), write it
