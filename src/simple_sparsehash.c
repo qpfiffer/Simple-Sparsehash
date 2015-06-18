@@ -117,28 +117,19 @@ static const int _sparse_array_group_set(struct sparse_array_group *arr, const u
 		/* We could do a realloc here and some memmove stuff, but this
 		 * is easier to think about. Allocate a new chunk of memory:
 		 */
-		void *new_group = malloc((arr->count + 1) * FULL_ELEM_SIZE);
+		void *new_group = realloc(arr->group, (arr->count + 1) * FULL_ELEM_SIZE);
 		if (new_group == NULL)
 			return 0;
 
-		if (offset * FULL_ELEM_SIZE > 0) {
-			/* Now we move all of the buckets from 0 .. offset to the new
-			 * chunk of memory:
-			 */
-			const size_t to_copy_siz = offset * FULL_ELEM_SIZE;
-			memcpy(new_group, arr->group, to_copy_siz);
-		}
-
 		/* Now take all of the old items and move them up a slot: */
 		if (to_move_siz > 0) {
-			memcpy((unsigned char *)(new_group) + ((offset + 1) * FULL_ELEM_SIZE),
-					(unsigned char *)(arr->group) + (offset * FULL_ELEM_SIZE),
+			memmove((unsigned char *)(new_group) + ((offset + 1) * FULL_ELEM_SIZE),
+					(unsigned char *)(new_group) + (offset * FULL_ELEM_SIZE),
 					to_move_siz);
 		}
 
 		/* Increase the bucket count because we've expanded: */
 		arr->count++;
-		free(arr->group);
 		arr->group = new_group;
 		/* Remember to modify the bitmap: */
 		set_position(arr->bitmap, i);
