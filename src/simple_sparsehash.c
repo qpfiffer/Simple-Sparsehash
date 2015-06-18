@@ -35,7 +35,7 @@ static const uint32_t charbit(const uint32_t position) {
 }
 
 static const uint32_t modbit(const uint32_t position) {
-	/* Get the number of bits of this number that are 0 - 7,
+	/* Get the number of bits of this number that are 0 - 31,
 	 * or something like that.
 	 */
 	return 1 << (position & 31);
@@ -61,7 +61,7 @@ static inline uint32_t popcount_32(uint32_t x) {
  *
  * The way we do this is by counting the number of 1s in the bitmap from
  * 0 .. i-1 in the bitmap. The original implementation uses a big table for the
- * popcount, I've opted to just use a GCC builtin.
+ * popcount.
  */
 static const uint32_t position_to_offset(const uint32_t *bitmap,
 									   const uint32_t position) {
@@ -114,9 +114,7 @@ static const int _sparse_array_group_set(struct sparse_array_group *arr, const u
 	offset = position_to_offset(arr->bitmap, i);
 	if (!is_position_occupied(arr->bitmap, i)) {
 		const size_t to_move_siz = (arr->count - offset) * FULL_ELEM_SIZE;
-		/* We could do a realloc here and some memmove stuff, but this
-		 * is easier to think about. Allocate a new chunk of memory:
-		 */
+		/* Reallocate the array to hold the new item */
 		void *new_group = realloc(arr->group, (arr->count + 1) * FULL_ELEM_SIZE);
 		if (new_group == NULL)
 			return 0;
