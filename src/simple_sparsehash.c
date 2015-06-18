@@ -121,9 +121,18 @@ static const int _sparse_array_group_set(struct sparse_array_group *arr, const u
 
 		/* Now take all of the old items and move them up a slot: */
 		if (to_move_siz > 0) {
-			memmove((unsigned char *)(new_group) + ((offset + 1) * FULL_ELEM_SIZE),
-					(unsigned char *)(new_group) + (offset * FULL_ELEM_SIZE),
-					to_move_siz);
+			int i = 0;
+			/* This is ripped from the original implementation, basically. Copy
+			 * values over by one in place instead of using memmove(). This saves
+			 * time because memmove() copies the entire array to a temporary one,
+			 * and then back which is basicaly two memcpy() calls over a large
+			 * chunk of memory. Appears to be faster.
+			 */
+			for (i = arr->count; i > offset; --i) {
+				memcpy(new_group + (i * FULL_ELEM_SIZE),
+					   new_group + ((i - 1) * FULL_ELEM_SIZE),
+					   FULL_ELEM_SIZE);
+			}
 		}
 
 		/* Increase the bucket count because we've expanded: */
