@@ -121,18 +121,9 @@ static const int _sparse_array_group_set(struct sparse_array_group *arr, const u
 
 		/* Now take all of the old items and move them up a slot: */
 		if (to_move_siz > 0) {
-			int i = 0;
-			/* This is ripped from the original implementation, basically. Copy
-			 * values over by one in place instead of using memmove(). This saves
-			 * time because memmove() copies the entire array to a temporary one,
-			 * and then back which is basicaly two memcpy() calls over a large
-			 * chunk of memory. Appears to be faster.
-			 */
-			for (i = arr->count; i > offset; --i) {
-				memcpy(new_group + (i * FULL_ELEM_SIZE),
-					   new_group + ((i - 1) * FULL_ELEM_SIZE),
-					   FULL_ELEM_SIZE);
-			}
+			memmove((unsigned char *)(new_group) + ((offset + 1) * FULL_ELEM_SIZE),
+					(unsigned char *)(new_group) + (offset * FULL_ELEM_SIZE),
+					to_move_siz);
 		}
 
 		/* Increase the bucket count because we've expanded: */
@@ -277,14 +268,15 @@ static const int _create_and_insert_new_bucket(
 						const void *value, const size_t vlen,
 						const uint64_t key_hash) {
 	void *copied_value = NULL;
-	char *copied_key = strndup(key, klen);
-	if (copied_key == NULL)
-		goto error;
+	char *copied_key = NULL;
 
-	copied_value = malloc(vlen);
+	copied_value = malloc(vlen + klen);
 	if (copied_value == NULL)
 		goto error;
 	memcpy(copied_value, value, vlen);
+
+	copied_key = copied_value + vlen;
+	strncpy(copied_key, key, klen);
 
 	struct sparse_bucket bct = {
 		.key = copied_key,
@@ -301,7 +293,6 @@ static const int _create_and_insert_new_bucket(
 
 error:
 	free(copied_value);
-	free(copied_key);
 	return 0;
 }
 
@@ -480,7 +471,6 @@ const int sparse_dict_free(struct sparse_dict *dict) {
 
 		if (current_value_siz != 0 && current_value != NULL) {
 			struct sparse_bucket *existing_bucket = (struct sparse_bucket *)current_value;
-			free(existing_bucket->key);
 			free(existing_bucket->val);
 		}
 	}
