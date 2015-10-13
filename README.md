@@ -13,7 +13,7 @@ your project and start using them, or:
     sudo make install
 ```
 
-Then when you build your project just pass link to the shared library with
+Then when you build your project just link to the shared library with
 `-lsimple-sparsehash`.
 
 ## Tests
