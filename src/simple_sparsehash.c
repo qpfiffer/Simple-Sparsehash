@@ -178,7 +178,7 @@ static const int _sparse_array_group_free(struct sparse_array_group *arr) {
 }
 
 struct sparse_array *sparse_array_init(const size_t element_size, const uint32_t maximum) {
-	int i = 0;
+	unsigned int i = 0;
 	struct sparse_array *arr = NULL;
 	/* CHECK YOUR SYSCALL RETURNS. Listen to djb. */
 	arr = calloc(1, sizeof(struct sparse_array));
@@ -232,7 +232,7 @@ const void *sparse_array_get(struct sparse_array *arr, const uint32_t i, size_t 
 }
 
 const int sparse_array_free(struct sparse_array *arr) {
-	int i = 0;
+	unsigned int i = 0;
 	for (; i < MAX_ARR_SIZE; i++) {
 		struct sparse_array_group *sag = &arr->groups[i];
 		_sparse_array_group_free(sag);
@@ -300,7 +300,7 @@ static const int _rehash_and_grow_table(struct sparse_dict *dict) {
 	/* We've reached our chosen 'rehash the table' point, so
 	 * we need to resize the table now.
 	 */
-	int i = 0, buckets_rehashed = 0;
+	unsigned int i = 0, buckets_rehashed = 0;
 	const size_t new_bucket_max = dict->bucket_max * 2;
 	struct sparse_array *new_buckets = NULL;
 
@@ -464,7 +464,7 @@ const void *sparse_dict_get(struct sparse_dict *dict, const char *key,
 }
 
 const int sparse_dict_free(struct sparse_dict *dict) {
-	int i = 0;
+	unsigned int i = 0;
 	for (i = 0; i < dict->bucket_max; i++) {
 		size_t current_value_siz = 0;
 		const void *current_value = sparse_array_get(dict->buckets, i, &current_value_siz);
