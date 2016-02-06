@@ -17,7 +17,7 @@
 	}
 #define finish_tests() printf("\n-----\nTests passed: (%i/%i)\n", tests_run,\
 							  tests_run + tests_failed);
-#define assert(x) if (!x) {\
+#define assert(x) if (!(x)) {\
 		printf("%i: ", __LINE__);\
 		return 0;\
 	}
@@ -158,7 +158,7 @@ int test_array_set_overwrites_old_values() {
 	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
 	assert(sparse_array_set(arr, 0, &test_num2, sizeof(test_num2)));
 
-	assert(sparse_array_get(arr, 0, NULL) == 1024);
+	assert(*(const int *)sparse_array_get(arr, 0, NULL) == 1024);
 
 	assert(sparse_array_free(arr));
 	return 1;
@@ -172,7 +172,7 @@ int test_array_get() {
 	assert(arr);
 
 	assert(sparse_array_set(arr, 0, &test_num, sizeof(test_num)));
-	assert(sparse_array_get(arr, 0, &item_size) == 666);
+	assert(*(const int *)sparse_array_get(arr, 0, &item_size) == 666);
 	assert(item_size == sizeof(int));
 
 	assert(sparse_array_free(arr));

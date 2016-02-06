@@ -1,6 +1,6 @@
 VERSION=0.1
 SOVERSION=0
-CFLAGS=-O3 -g -Werror -Wall
+CFLAGS=-std=c99 -O3 -g -Werror -Wall
 NAME=libsimple-sparsehash.so
 TESTNAME=sparsehash_test
 OBJS=simple_sparsehash.o
