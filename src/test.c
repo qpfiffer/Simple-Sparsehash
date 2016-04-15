@@ -226,7 +226,7 @@ int test_dict_lots_of_set() {
 		snprintf(val, sizeof(val), "value%i", i);
 
 		assert(sparse_dict_set(dict, key, strlen(key), val, strlen(val)));
-		assert(dict->bucket_count == i + 1);
+		assert(dict->bucket_count == (unsigned int)(i + 1));
 
 		size_t outsize = 0;
 		const char *retrieved_value = sparse_dict_get(dict, key, strlen(key), &outsize);
@@ -255,6 +255,9 @@ int test_dict_lots_of_set() {
 }
 
 int main(int argc, char *argv[]) {
+	(void)argc;
+	(void)argv;
+
 	begin_tests();
 	run_test(test_cannot_set_bigger_elements);
 	run_test(test_cannot_set_outside_bounds);
