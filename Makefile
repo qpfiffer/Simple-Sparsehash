@@ -11,6 +11,14 @@ PREFIX?=/usr/local
 INSTALL_LIB=$(PREFIX)/lib/
 INSTALL_INCLUDE=$(PREFIX)/include/
 
+uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
+LDCONFIG=
+ifeq ($(uname_S),Darwin)
+	LDCONFIG=echo
+else
+	LDCONFIG=ldconfig
+endif
+
 all: $(NAME) $(TESTNAME)
 
 clean:
@@ -38,5 +46,5 @@ install:
 	@ln -fs $(INSTALL_LIB)$(NAME).$(VERSION) $(INSTALL_LIB)$(NAME)
 	@ln -fs $(INSTALL_LIB)$(NAME).$(VERSION) $(INSTALL_LIB)$(NAME).$(SOVERSION)
 	@install ./include/*.h $(INSTALL_INCLUDE)
-	@ldconfig $(INSTALL_LIB)
+	@$(LDCONFIG) $(INSTALL_LIB)
 	@echo "$(NAME) installed to $(PREFIX) :^)."
